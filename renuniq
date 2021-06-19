@@ -10,9 +10,13 @@
 # should have the same prefix, but don't now
 #
 
-import sys, os, stat, time, re, string, subprocess
-from time import strftime
 import getopt
+import os
+import re
+import stat
+import subprocess
+import sys
+import time
 
 license = '''\
    Copyright 2006-2021 by Daniel Fandrich <dan@coneharvesters.com>
@@ -49,13 +53,14 @@ def printerr(msg):
 	fn = os.path.basename(sys.argv[0])
 	print(f"{fn}: {msg}", file=sys.stderr)
 
+
 def getmtime(fn):
 	return time.localtime(os.stat(fn)[stat.ST_MTIME])
 
 
 class Substitute:
 	'Substitute variables for their keys. Looks much like a dict.'
-	def __init__(self,dict,num=0):
+	def __init__(self, dict, num=0):
 		self.dict = dict
 		self.number = num
 
@@ -81,6 +86,7 @@ class Substitute:
 	def nextitem(self):
 		self.number = self.number + 1
 
+
 def substvars(str, substdict):
 	'Substitute %{foo} strings in str with the key in substdict'
 	newpieces = []
@@ -93,6 +99,7 @@ def substvars(str, substdict):
 		laststart = i.span()[1]
 	newpieces.append(str[laststart:])
 	return ''.join(newpieces)
+
 
 def make_subst_dict(fn, prefix, descriptor, num):
 	'Create a substitution dictionary from the file information'
@@ -120,17 +127,19 @@ def make_subst_dict(fn, prefix, descriptor, num):
 	dict['num_auto_width'] = 'NUM%d' % num
 	return dict
 
+
 def safemove(fr, to):
 	'Safely move a file potentially across filesystems'
 	rc = subprocess.run(['mv', fr, to])
 	if rc.returncode:
 		printerr('Error renaming %s to %s' % (fr, to))
 	# TODO: change this to use
-	#os.rename(f,newpath)
+	#  os.rename(f, newpath)
 	# but check for posix.error: (18, 'Cross-device link')
 	# and copy it instead
 
-# TODO: fix this so it 
+
+# TODO: fix this so it
 # picks up the variables read from in the .renuniqrc file
 def usage():
 	print('Usage: renuniq [-?hmnwL] [-c countstart] [-d descriptor] [-t template] filename...')
@@ -241,7 +250,7 @@ def rename(argv):
 		if extpos >= 0:
 			prefix = prefix[:extpos]
 		else:
-			prefix =''
+			prefix = ''
 
 	if DEBUG:
 		print('pathprefix', pathprefix)
@@ -268,7 +277,7 @@ def rename(argv):
 			printerr('Unknown substitution variable %s' % attr)
 		else:
 			if strftime_enable:
-				newname = strftime(newname, times)
+				newname = time.strftime(newname, times)
 
 			if os.path.isabs(newname):
 				newpath = newname
@@ -277,8 +286,8 @@ def rename(argv):
 				newpath = os.path.join(direct, newname)
 
 			if os.path.exists(newpath):
-				printerr('Skipping %s (%s already exists)' % 
-					 (f, newpath))
+				printerr('Skipping %s (%s already exists)' %
+					     (f, newpath))
 			else:
 				print('mv "%s" "%s"' % (f, newpath))
 				if not dry_run:
@@ -286,7 +295,7 @@ def rename(argv):
 					# between checking for existence and
 					# the actual move!
 					safemove(f, newpath)
-			
 
-if __name__=='__main__':
+
+if __name__ == '__main__':
 	rename(sys.argv)
