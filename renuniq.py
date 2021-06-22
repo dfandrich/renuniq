@@ -17,6 +17,7 @@ import stat
 import subprocess
 import sys
 import time
+from typing import Dict, List, Mapping
 
 license = '''\
 Copyright 2006-2021 by Daniel Fandrich <dan@coneharvesters.com>
@@ -37,14 +38,14 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 
 DEBUG = 0
 
-CONFIG = {}
+CONFIG = {}  # type: dict[str, str]
 CONFIG['default_template'] = '%Y%m%d_%{UNIQSUFF}'
 CONFIG['default_template_single'] = CONFIG['default_template']
 CONFIG['default_template_desc'] = '%Y%m%d_%{DESC}_%{UNIQSUFF}'
 CONFIG['default_template_desc_single'] = CONFIG['default_template_desc']
 
 
-def printerr(msg):
+def printerr(msg: str):
     '''Print an error message to stderr including leading program name
 
     Displays a message of the form:
@@ -54,21 +55,21 @@ def printerr(msg):
     print(f"{fn}: {msg}", file=sys.stderr)
 
 
-def getmtime(fn):
+def getmtime(fn: str) -> time.struct_time:
     return time.localtime(os.stat(fn)[stat.ST_MTIME])
 
 
-class Substitute:
+class Substitute(dict):
     'Substitute variables for their keys. Looks much like a dict.'
-    def __init__(self, dict, num=0):
-        self.dict = dict
+    def __init__(self, d: dict, num: int = 0):
+        dict.__init__(self, d)
         self.number = num
 
-    def __getitem__(self, attr):
-        if attr in self.dict:
-            return self.dict[attr]
+    def __getitem__(self, attr: str) -> str:
+        if self.__contains__(attr):
+            return dict.__getitem__(self, attr)
         elif attr == 'NUM':
-            attr = self.dict['num_auto_width']
+            attr = dict.__getitem__(self, 'num_auto_width')
         if attr == 'NUM1':
             return '%01d' % self.number
         elif attr == 'NUM2':
@@ -83,25 +84,22 @@ class Substitute:
             return '%06d' % self.number
         raise KeyError(attr)
 
-    def nextitem(self):
-        self.number = self.number + 1
 
-
-def substvars(str, substdict):
-    'Substitute %{foo} strings in str with the key in substdict'
+def substvars(s: str, substdict: Mapping[str, str]) -> str:
+    'Substitute %{foo} strings in s with the key in substdict'
     newpieces = []
     laststart = 0
-    for i in re.finditer('%{([A-Za-z_0-9]*)}', str):
+    for i in re.finditer('%{([A-Za-z_0-9]*)}', s):
         varname = i.group(1)
         varvalue = substdict[varname]
-        newpieces.append(str[laststart:i.span()[0]])
+        newpieces.append(s[laststart:i.span()[0]])
         newpieces.append(varvalue)
         laststart = i.span()[1]
-    newpieces.append(str[laststart:])
+    newpieces.append(s[laststart:])
     return ''.join(newpieces)
 
 
-def make_subst_dict(fn, prefix, descriptor, num):
+def make_subst_dict(fn: str, prefix: str, descriptor: str, num: int) -> Dict[str, str]:
     'Create a substitution dictionary from the file information'
     base = os.path.basename(fn)
     direct = os.path.dirname(fn)
@@ -116,7 +114,7 @@ def make_subst_dict(fn, prefix, descriptor, num):
         ext = ''
         notext = base
 
-    dict = {}
+    dict = {}  # type: dict[str, str]
     dict['UNIQSUFF'] = endname
     dict['DIR'] = direct
     dict['NAME'] = base
@@ -128,7 +126,7 @@ def make_subst_dict(fn, prefix, descriptor, num):
     return dict
 
 
-def safemove(fr, to):
+def safemove(fr: str, to: str):
     'Safely move a file potentially across filesystems'
     rc = subprocess.run(['mv', fr, to])
     if rc.returncode:
@@ -166,7 +164,7 @@ strftime parameters on the modification time are also allowed, e.g. %Y, %m, %d''
         print('...for only a single file argument: %s' % (CONFIG['default_template_desc_single']))
 
 
-def rename(argv):
+def rename(argv: List[str]):
     try:
         optlist, args = getopt.getopt(argv[1:], '?c:d:hmnt:wL')
     except getopt.error:
@@ -267,8 +265,8 @@ def rename(argv):
 
         if use_time_now:
             times = time.localtime(time.time())
-        dict = make_subst_dict(f, prefix, descriptor, len(repr(countmax)))
-        substitute = Substitute(dict, count)
+        substitutions = make_subst_dict(f, prefix, descriptor, len(repr(countmax)))
+        substitute = Substitute(substitutions, count)
         count = count + 1
 
         try:
@@ -297,5 +295,9 @@ def rename(argv):
                     safemove(f, newpath)
 
 
-if __name__ == '__main__':
+def main():
     rename(sys.argv)
+
+
+if __name__ == '__main__':
+    main()
