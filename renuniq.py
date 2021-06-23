@@ -61,6 +61,7 @@ def getmtime(fn: str) -> time.struct_time:
 
 class Substitute(dict):
     'Substitute variables for their keys. Looks much like a dict.'
+
     def __init__(self, d: dict, num: int = 0):
         dict.__init__(self, d)
         self.number = num
@@ -169,7 +170,7 @@ def rename(argv: List[str]):
         optlist, args = getopt.getopt(argv[1:], '?c:d:hmnt:wL')
     except getopt.error:
         printerr('Unsupported command-line parameter')
-        sys.exit(1)
+        return 1
 
     show_usage = 0
     names = args
@@ -190,7 +191,7 @@ def rename(argv: List[str]):
                 count = int(arg)
             except ValueError:
                 printerr('-c takes a numeric argument')
-                sys.exit(1)
+                return 1
 
         elif opt == '-d':
             descriptor = arg
@@ -209,7 +210,7 @@ def rename(argv: List[str]):
 
         elif opt == '-L':
             print(license, end='')
-            sys.exit(0)
+            return 0
 
     # Read the config file before displaying help
     if 'HOME' in os.environ:
@@ -222,7 +223,7 @@ def rename(argv: List[str]):
 
     if show_usage:
         usage()
-        sys.exit(1)
+        return 1
 
     if not template:
         if descriptor:
@@ -293,10 +294,11 @@ def rename(argv: List[str]):
                     # between checking for existence and
                     # the actual move!
                     safemove(f, newpath)
+    return 0
 
 
 def main():
-    rename(sys.argv)
+    exit(rename(sys.argv))
 
 
 if __name__ == '__main__':
