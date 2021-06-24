@@ -2,13 +2,6 @@
 # Rename files with their modification date, keeping enough of the end of the
 # name to make a unique name
 # Dan Fandrich
-# Started May 22, 2006
-# Bug:
-#  renvideos -n _foo_ /tmp/vclp0*.mp4 /tmp/v/vv
-# and
-#  renvideos -n _foo_ /tmp/vclp0*.mp4 /tmp/w/vv
-# should have the same prefix, but don't now
-#
 
 import getopt
 import os
@@ -131,17 +124,15 @@ def make_subst_dict(fn: str, prefix: str, descriptor: str) -> Dict[str, str]:
 
 def safemove(fr: str, to: str):
     'Safely move a file potentially across filesystems'
+    # This could be switched to:
+    #  shutil.move(f, newpath)
+    # to keep it Python-only, but the comments for that function admit that the implementation is
+    # lacking. Using mv (when available) is more reliable, especially for cross-device moves.
     rc = subprocess.run(['mv', fr, to])
     if rc.returncode:
-    # TODO: change this to use
-    #  os.rename(f, newpath)
-    # but check for posix.error: (18, 'Cross-device link')
-    # and copy it instead
         printerr(f'Error renaming {fr} to {to}')
 
 
-# TODO: fix this so it
-# picks up the variables read from in the .renuniqrc file
 def usage():
     print('Usage: renuniq [-?hmnwL] [-c countstart] [-d descriptor] [-t template] filename...')
     print('  -m  Turn off strftime variable substitution in template')
@@ -239,7 +230,7 @@ def rename(argv: List[str]):
             else:
                 template = CONFIG['default_template']
 
-    # What is the least suffix that will make a new name unique?
+    # What is the shortest suffix that will make a new name unique?
     pathprefix = os.path.commonprefix(names)
     dirprefix = os.path.dirname(pathprefix)
     prefix = os.path.basename(pathprefix)
@@ -262,6 +253,8 @@ def rename(argv: List[str]):
         times = time.localtime(time.time())
 
     countmax = count + len(names) - 1
+
+    # Loop around all files, renaming them
     for f in names:
         if strftime_enable and not use_time_now:
             try:
@@ -293,8 +286,7 @@ def rename(argv: List[str]):
             else:
                 print(f'mv {shlex.quote(f)} {shlex.quote(newpath)}')
                 if not dry_run:
-                    # Beware the race condition here
-                    # between checking for existence and
+                    # Beware the race condition here between checking for existence and
                     # the actual move!
                     safemove(f, newpath)
     return 0
