@@ -4,6 +4,7 @@
 # Dan Fandrich
 
 import getopt
+import logging
 import os
 import re
 import shlex
@@ -31,23 +32,13 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 '''
 
-DEBUG = 0
+LOG_LEVEL = logging.ERROR  # set to logging.DEBUG for debug logging
 
 CONFIG = {}  # type: dict[str, str]
 CONFIG['default_template'] = '%Y%m%d_%{UNIQSUFF}'
 CONFIG['default_template_single'] = CONFIG['default_template']
 CONFIG['default_template_desc'] = '%Y%m%d_%{DESC}_%{UNIQSUFF}'
 CONFIG['default_template_desc_single'] = CONFIG['default_template_desc']
-
-
-def printerr(msg: str):
-    '''Print an error message to stderr including leading program name
-
-    Displays a message of the form:
-     progname: This is an error or warning message
-    '''
-    fn = os.path.basename(sys.argv[0])
-    print(f"{fn}: {msg}", file=sys.stderr)
 
 
 def getmtime(fn: str) -> time.struct_time:
@@ -111,6 +102,8 @@ def make_subst_dict(fn: str, prefix: str, descriptor: str) -> Dict[str, str]:
     else:
         ext = ''
         notext = base
+    logging.debug(f'endname={endname}')
+    logging.debug(f'ext={ext}')
 
     dict = {}  # type: dict[str, str]
     dict['UNIQSUFF'] = endname
@@ -164,7 +157,7 @@ def rename(argv: List[str]):
     try:
         optlist, args = getopt.getopt(argv[1:], '?c:d:hmnt:wL')
     except getopt.error:
-        printerr('Unsupported command-line parameter')
+        logging.critical('Unsupported command-line parameter')
         return 1
 
     show_usage = 0
@@ -185,7 +178,7 @@ def rename(argv: List[str]):
             try:
                 count = int(arg)
             except ValueError:
-                printerr('-c takes a numeric argument')
+                logging.critical('-c takes a numeric argument')
                 return 1
 
         elif opt == '-d':
@@ -246,10 +239,9 @@ def rename(argv: List[str]):
         else:
             prefix = ''
 
-    if DEBUG:
-        print('pathprefix', pathprefix)
-        print('dirprefix', dirprefix)
-        print('prefix', prefix)
+    logging.debug(f'pathprefix={pathprefix}')
+    logging.debug(f'dirprefix={dirprefix}')
+    logging.debug(f'prefix={prefix}')
 
     if strftime_enable and use_time_now:
         times = time.localtime(time.time())
@@ -263,7 +255,7 @@ def rename(argv: List[str]):
             try:
                 times = getmtime(f)
             except OSError:
-                printerr(f'Skipping {f} (not readable)')
+                logging.error(f'Skipping {f} (not readable)')
                 errors += 1
                 continue
 
@@ -274,7 +266,7 @@ def rename(argv: List[str]):
         try:
             newname = substvars(template, substitute)
         except KeyError as attr:
-            printerr(f'Unknown substitution variable {attr}')
+            logging.error(f'Unknown substitution variable {attr}')
             errors += 1
             continue
 
@@ -288,7 +280,7 @@ def rename(argv: List[str]):
             newpath = os.path.join(direct, newname)
 
         if os.path.exists(newpath):
-            printerr(f'Skipping {f} ({newpath} already exists)')
+            logging.error(f'Skipping {f} ({newpath} already exists)')
             errors += 1
             continue
 
@@ -299,13 +291,14 @@ def rename(argv: List[str]):
             try:
                 safemove(f, newpath)
             except PermissionError:
-                printerr(f'Error renaming {f} to {newpath}')
+                logging.error(f'Error renaming {f} to {newpath}')
                 errors += 1
 
     return 1 if errors else 0
 
 
 def main():
+    logging.basicConfig(format='%(filename)s: %(message)s', level=LOG_LEVEL)
     exit(rename(sys.argv))
 
 
