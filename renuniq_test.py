@@ -51,7 +51,6 @@ class TestRenuniq(unittest.TestCase):
     def tearDown(self):
         self.old_env_patcher.stop()
         os.chdir(self.old_dir)
-        print(f"Clearing {self.staging_dir.name}")
         self.staging_dir.cleanup()
 
     def assertFilesEqual(self, files):
@@ -149,8 +148,8 @@ class TestRenuniq(unittest.TestCase):
         self.assertEqual(rc, 0)
         self.assertFilesEqual(
                 ['a', 'b', 'file10.x', 'file4.x', 'file6.x', 'file7572', 'withdata'])
-        self.assertIn('mv "file4.x" "RENAMED_4.x"', output.getvalue())
-        self.assertIn('mv "file6.x" "RENAMED_6.x"', output.getvalue())
+        self.assertIn('mv file4.x RENAMED_4.x', output.getvalue())
+        self.assertIn('mv file6.x RENAMED_6.x', output.getvalue())
 
     def test_substitutions(self):
         rc = renuniq.rename(['UNITTEST', '-d', 'DESC', '-t',
@@ -223,6 +222,25 @@ class TestRenuniq(unittest.TestCase):
         self.assertFilesEqual(
                 ['RENAMED_01', 'RENAMED_02', 'RENAMED_03', 'RENAMED_04', 'RENAMED_05',
                  'RENAMED_06', 'RENAMED_07', 'RENAMED_08', 'RENAMED_09', 'RENAMED_10'])
+
+    def test_quote_filenames(self):
+        # Create some names that need special quoting
+        for name in ('d-quote"', "s-quote'", 'redirect<'):
+            path = os.path.join(self.staging_dir.name, name)
+            with open(path, 'w'):
+                pass  # just create an empty file
+        output = io.StringIO()
+        with contextlib.redirect_stdout(output):
+            rc = renuniq.rename(['UNITTEST', '-t', 'RENAMED_%{NUM}',
+                                 'd-quote"', "s-quote'", 'redirect<'])
+
+        self.assertEqual(rc, 0)
+        self.assertFilesEqual(
+                ['RENAMED_1', 'RENAMED_2', 'RENAMED_3', 'a', 'b', 'file10.x', 'file4.x', 'file6.x',
+                 'file7572', 'withdata'])
+        self.assertIn('mv \'d-quote"\' RENAMED_1', output.getvalue())
+        self.assertIn('mv \'s-quote\'"\'"\'\' RENAMED_2', output.getvalue())
+        self.assertIn('mv \'redirect<\' RENAMED_3', output.getvalue())
 
 
 if __name__ == '__main__':

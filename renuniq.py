@@ -13,6 +13,7 @@
 import getopt
 import os
 import re
+import shlex
 import stat
 import subprocess
 import sys
@@ -289,7 +290,7 @@ def rename(argv: List[str]):
                 printerr('Skipping %s (%s already exists)' %
                          (f, newpath))
             else:
-                print('mv "%s" "%s"' % (f, newpath))
+                print('mv %s %s' % (shlex.quote(f), shlex.quote(newpath)))
                 if not dry_run:
                     # Beware the race condition here
                     # between checking for existence and
