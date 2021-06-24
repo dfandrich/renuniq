@@ -258,16 +258,18 @@ def rename(argv: List[str]):
         print('dirprefix', dirprefix)
         print('prefix', prefix)
 
+    if strftime_enable and use_time_now:
+        times = time.localtime(time.time())
+
     countmax = count + len(names) - 1
     for f in names:
-        try:
-            times = getmtime(f)
-        except OSError:
-            printerr('Skipping %s (not found)' % f)
-            continue
+        if strftime_enable and not use_time_now:
+            try:
+                times = getmtime(f)
+            except OSError:
+                printerr('Skipping %s (not found)' % f)
+                continue
 
-        if use_time_now:
-            times = time.localtime(time.time())
         substitutions = make_subst_dict(f, prefix, descriptor)
         substitute = Substitute(substitutions, count, len(repr(countmax)))
         count = count + 1
