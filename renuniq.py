@@ -7,6 +7,7 @@ import getopt
 import os
 import re
 import shlex
+import shutil
 import stat
 import subprocess
 import sys
@@ -123,14 +124,15 @@ def make_subst_dict(fn: str, prefix: str, descriptor: str) -> Dict[str, str]:
 
 
 def safemove(fr: str, to: str):
-    'Safely move a file potentially across filesystems'
-    # This could be switched to:
-    #  shutil.move(f, newpath)
-    # to keep it Python-only, but the comments for that function admit that the implementation is
-    # lacking. Using mv (when available) is more reliable, especially for cross-device moves.
-    rc = subprocess.run(['mv', fr, to])
-    if rc.returncode:
-        printerr(f'Error renaming {fr} to {to}')
+    'Safely move a file, potentially across filesystems'
+    try:
+        rc = subprocess.run(['mv', fr, to])
+        if rc.returncode:
+            printerr(f'Error renaming {fr} to {to}')
+    except FileNotFoundError:
+        # 'mv' couldn't be found. Fall back to Python-native move. This is inferior, as the
+        # comments for the function admit, but it's better than nothing.
+        shutil.move(fr, to)
 
 
 def usage():
