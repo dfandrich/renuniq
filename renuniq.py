@@ -75,17 +75,17 @@ class Substitute(dict):
             attr = f'NUM{self.num_width}'
 
         if attr == 'NUM1':
-            return '%01d' % self.number
+            return f'{self.number:01d}'
         elif attr == 'NUM2':
-            return '%02d' % self.number
+            return f'{self.number:02d}'
         elif attr == 'NUM3':
-            return '%03d' % self.number
+            return f'{self.number:03d}'
         elif attr == 'NUM4':
-            return '%04d' % self.number
+            return f'{self.number:04d}'
         elif attr == 'NUM5':
-            return '%05d' % self.number
+            return f'{self.number:05d}'
         elif attr == 'NUM6':
-            return '%06d' % self.number
+            return f'{self.number:06d}'
         raise KeyError(attr)
 
 
@@ -133,11 +133,11 @@ def safemove(fr: str, to: str):
     'Safely move a file potentially across filesystems'
     rc = subprocess.run(['mv', fr, to])
     if rc.returncode:
-        printerr('Error renaming %s to %s' % (fr, to))
     # TODO: change this to use
     #  os.rename(f, newpath)
     # but check for posix.error: (18, 'Cross-device link')
     # and copy it instead
+        printerr(f'Error renaming {fr} to {to}')
 
 
 # TODO: fix this so it
@@ -159,12 +159,12 @@ def usage():
 %{NUM}      a 0-padded positive increasing integer of automatic width
 %{NUMn}     a 0-padded positive increasing integer of width n (1<=n<=6)
 strftime parameters on the modification time are also allowed, e.g. %Y, %m, %d''')
-    print('Default template with no descriptor given: %s' % (CONFIG['default_template']))
+    print(f'Default template with no descriptor given: {CONFIG["default_template"]}')
     if CONFIG['default_template_single'] != CONFIG['default_template']:
-        print('...for only a single file argument: %s' % (CONFIG['default_template_single']))
-    print('Default template with descriptor given:    %s' % (CONFIG['default_template_desc']))
+        print(f'...for only a single file argument: {CONFIG["default_template_single"]}')
+    print(f'Default template with descriptor given:    {CONFIG["default_template_desc"]}')
     if CONFIG['default_template_desc_single'] != CONFIG['default_template_desc']:
-        print('...for only a single file argument: %s' % (CONFIG['default_template_desc_single']))
+        print(f'...for only a single file argument: {CONFIG["default_template_desc_single"]}')
 
 
 def rename(argv: List[str]):
@@ -267,7 +267,7 @@ def rename(argv: List[str]):
             try:
                 times = getmtime(f)
             except OSError:
-                printerr('Skipping %s (not found)' % f)
+                printerr(f'Skipping {f} (not readable)')
                 continue
 
         substitutions = make_subst_dict(f, prefix, descriptor)
@@ -277,7 +277,7 @@ def rename(argv: List[str]):
         try:
             newname = substvars(template, substitute)
         except KeyError as attr:
-            printerr('Unknown substitution variable %s' % attr)
+            printerr(f'Unknown substitution variable {attr}')
         else:
             if strftime_enable:
                 newname = time.strftime(newname, times)
@@ -289,10 +289,9 @@ def rename(argv: List[str]):
                 newpath = os.path.join(direct, newname)
 
             if os.path.exists(newpath):
-                printerr('Skipping %s (%s already exists)' %
-                         (f, newpath))
+                printerr(f'Skipping {f} ({newpath} already exists)')
             else:
-                print('mv %s %s' % (shlex.quote(f), shlex.quote(newpath)))
+                print(f'mv {shlex.quote(f)} {shlex.quote(newpath)}')
                 if not dry_run:
                     # Beware the race condition here
                     # between checking for existence and
