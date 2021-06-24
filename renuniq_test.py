@@ -242,6 +242,47 @@ class TestRenuniq(unittest.TestCase):
         self.assertIn('mv \'s-quote\'"\'"\'\' RENAMED_2', output.getvalue())
         self.assertIn('mv \'redirect<\' RENAMED_3', output.getvalue())
 
+    def test_err_write(self):
+        # Make directory read-only
+        os.chmod(self.staging_dir.name, 0o500)
+
+        rc = renuniq.rename(['UNITTEST', '-t', 'RENAMED_%{NUM}', 'a'])
+
+        # Make directory writable again so it can be deleted
+        os.chmod(self.staging_dir.name, 0o700)
+
+        self.assertEqual(rc, 1)
+        self.assertFilesEqual(
+                ['a', 'b', 'file10.x', 'file4.x', 'file6.x', 'file7572', 'withdata'])
+
+    def test_err_nonexistent_file(self):
+        rc = renuniq.rename(['UNITTEST', '-t', 'RENAMED_%{NUM}', 'XYZZY', 'a'])
+
+        self.assertEqual(rc, 1)
+        self.assertFilesEqual(
+                ['RENAMED_1', 'b', 'file10.x', 'file4.x', 'file6.x', 'file7572', 'withdata'])
+
+    def test_err_bad_variable(self):
+        rc = renuniq.rename(['UNITTEST', '-t', 'RENAMED_%{XYZZY}', 'a'])
+
+        self.assertEqual(rc, 1)
+        self.assertFilesEqual(
+                ['a', 'b', 'file10.x', 'file4.x', 'file6.x', 'file7572', 'withdata'])
+
+    def test_err_overwrite_existing_file(self):
+        rc = renuniq.rename(['UNITTEST', '-t', 'withdata', 'a'])
+
+        self.assertEqual(rc, 1)
+        self.assertFilesEqual(
+                ['a', 'b', 'file10.x', 'file4.x', 'file6.x', 'file7572', 'withdata'])
+
+    def test_err_overwrite_renamed_file(self):
+        rc = renuniq.rename(['UNITTEST', '-t', 'file%{NUM}.x', 'a', 'b', 'withdata', 'file6.x'])
+
+        self.assertEqual(rc, 1)
+        self.assertFilesEqual(
+                ['file1.x', 'file10.x', 'file2.x', 'file3.x', 'file4.x', 'file6.x', 'file7572'])
+
 
 if __name__ == '__main__':
     unittest.main()

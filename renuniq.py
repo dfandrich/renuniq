@@ -128,7 +128,7 @@ def safemove(fr: str, to: str):
     try:
         rc = subprocess.run(['mv', fr, to])
         if rc.returncode:
-            printerr(f'Error renaming {fr} to {to}')
+            raise PermissionError  # The most likely cause of error, but may be wrong
     except FileNotFoundError:
         # 'mv' couldn't be found. Fall back to Python-native move. This is inferior, as the
         # comments for the function admit, but it's better than nothing.
@@ -255,6 +255,7 @@ def rename(argv: List[str]):
         times = time.localtime(time.time())
 
     countmax = count + len(names) - 1
+    errors = 0
 
     # Loop around all files, renaming them
     for f in names:
@@ -263,35 +264,45 @@ def rename(argv: List[str]):
                 times = getmtime(f)
             except OSError:
                 printerr(f'Skipping {f} (not readable)')
+                errors += 1
                 continue
 
         substitutions = make_subst_dict(f, prefix, descriptor)
         substitute = Substitute(substitutions, count, len(repr(countmax)))
-        count = count + 1
+        count += 1
 
         try:
             newname = substvars(template, substitute)
         except KeyError as attr:
             printerr(f'Unknown substitution variable {attr}')
+            errors += 1
+            continue
+
+        if strftime_enable:
+            newname = time.strftime(newname, times)
+
+        if os.path.isabs(newname):
+            newpath = newname
         else:
-            if strftime_enable:
-                newname = time.strftime(newname, times)
+            direct = os.path.dirname(f)
+            newpath = os.path.join(direct, newname)
 
-            if os.path.isabs(newname):
-                newpath = newname
-            else:
-                direct = os.path.dirname(f)
-                newpath = os.path.join(direct, newname)
+        if os.path.exists(newpath):
+            printerr(f'Skipping {f} ({newpath} already exists)')
+            errors += 1
+            continue
 
-            if os.path.exists(newpath):
-                printerr(f'Skipping {f} ({newpath} already exists)')
-            else:
-                print(f'mv {shlex.quote(f)} {shlex.quote(newpath)}')
-                if not dry_run:
-                    # Beware the race condition here between checking for existence and
-                    # the actual move!
-                    safemove(f, newpath)
-    return 0
+        print(f'mv {shlex.quote(f)} {shlex.quote(newpath)}')
+        if not dry_run:
+            # Beware the race condition here between checking for existence and
+            # the actual move!
+            try:
+                safemove(f, newpath)
+            except PermissionError:
+                printerr(f'Error renaming {f} to {newpath}')
+                errors += 1
+
+    return 1 if errors else 0
 
 
 def main():
