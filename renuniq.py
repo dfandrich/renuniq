@@ -62,15 +62,17 @@ def getmtime(fn: str) -> time.struct_time:
 class Substitute(dict):
     'Substitute variables for their keys. Looks much like a dict.'
 
-    def __init__(self, d: dict, num: int = 0):
+    def __init__(self, d: dict, num: int, num_width: int):
         dict.__init__(self, d)
         self.number = num
+        self.num_width = num_width
 
     def __getitem__(self, attr: str) -> str:
         if self.__contains__(attr):
             return dict.__getitem__(self, attr)
         elif attr == 'NUM':
-            attr = dict.__getitem__(self, 'num_auto_width')
+            attr = f'NUM{self.num_width}'
+
         if attr == 'NUM1':
             return '%01d' % self.number
         elif attr == 'NUM2':
@@ -100,7 +102,7 @@ def substvars(s: str, substdict: Mapping[str, str]) -> str:
     return ''.join(newpieces)
 
 
-def make_subst_dict(fn: str, prefix: str, descriptor: str, num: int) -> Dict[str, str]:
+def make_subst_dict(fn: str, prefix: str, descriptor: str) -> Dict[str, str]:
     'Create a substitution dictionary from the file information'
     base = os.path.basename(fn)
     direct = os.path.dirname(fn)
@@ -123,7 +125,6 @@ def make_subst_dict(fn: str, prefix: str, descriptor: str, num: int) -> Dict[str
     dict['EXT'] = ext
     dict['NOTEXT'] = notext
     dict['DESC'] = descriptor
-    dict['num_auto_width'] = 'NUM%d' % num
     return dict
 
 
@@ -266,8 +267,8 @@ def rename(argv: List[str]):
 
         if use_time_now:
             times = time.localtime(time.time())
-        substitutions = make_subst_dict(f, prefix, descriptor, len(repr(countmax)))
-        substitute = Substitute(substitutions, count)
+        substitutions = make_subst_dict(f, prefix, descriptor)
+        substitute = Substitute(substitutions, count, len(repr(countmax)))
         count = count + 1
 
         try:
