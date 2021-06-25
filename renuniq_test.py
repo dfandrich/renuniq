@@ -75,21 +75,31 @@ class TestRenuniq(unittest.TestCase):
         output = io.StringIO()
         with contextlib.redirect_stdout(output):
             rc = renuniq.rename(['UNITTEST', '-?'])
+
         self.assertEqual(rc, 1)
         # Check some sentinels to ensure help is there without having to update the test
         # for every small change
         self.assertIn('Usage: renuniq [', output.getvalue())
-        self.assertIn('-n  Print what', output.getvalue())
+        self.assertIn('-n   Print what', output.getvalue())
 
     def test_license(self):
         output = io.StringIO()
         with contextlib.redirect_stdout(output):
             rc = renuniq.rename(['UNITTEST', '-L'])
+
         self.assertEqual(rc, 0)
         # Check some sentinels to ensure help is there without having to update the test
         # for every small change
         self.assertIn('by Daniel Fandrich', output.getvalue())
         self.assertIn('GNU General Public License', output.getvalue())
+
+    def test_version(self):
+        output = io.StringIO()
+        with contextlib.redirect_stdout(output):
+            rc = renuniq.rename(['UNITTEST', '-V'])
+
+        self.assertEqual(rc, 0)
+        self.assertRegex(output.getvalue(), r'^renuniq ver\. [0-9]+')
 
     def test_bad_option(self):
         output = io.StringIO()

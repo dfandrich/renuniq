@@ -1,7 +1,12 @@
 #!/usr/bin/env python3
-# Rename files with their modification date, keeping enough of the end of the
-# name to make a unique name
-# Dan Fandrich
+"""Rename files following a user-defined template.
+
+It can rename file including their modification dates, or by keeping enough of the end of
+the name to make it unique, or a myriad of other ways.
+"""
+
+__author__ = 'Dan Fandrich'
+__version__ = '0'
 
 from dataclasses import dataclass
 import getopt
@@ -17,7 +22,7 @@ import textwrap
 import time
 from typing import Dict, List, Mapping
 
-license = '''\
+license = """\
 Copyright 2006-2021 by Daniel Fandrich <dan@coneharvesters.com>
 This program is free software; you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
@@ -32,7 +37,7 @@ GNU General Public License for more details.
 You should have received a copy of the GNU General Public License along
 with this program; if not, write to the Free Software Foundation, Inc.,
 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
-'''
+"""
 
 LOG_LEVEL = logging.ERROR  # set to logging.DEBUG for debug logging
 
@@ -132,11 +137,15 @@ def safemove(fr: str, to: str):
 
 def usage(config: Dict[str, str]):
     'Show program usage information'
-    print('Usage: renuniq [-?hmnwL] [-c countstart] [-d descriptor] [-t template] filename...')
-    print('  -m  Turn off strftime variable substitution in template')
-    print("  -n  Print what would be executed but don't actually do it")
-    print('  -w  Use the time now instead of mtime for strftime format strings')
-    print('  -L  Display program license')
+    print('Usage: renuniq [-?hmnwLV] [-c countstart] [-d descriptor] [-t template] filename...')
+    print('  -c N Start the sequential count at this integer')
+    print('  -d X Set the value of the substitution variable %{DESC}')
+    print('  -m   Turn off strftime variable substitution in template')
+    print("  -n   Print what would be executed but don't actually do it")
+    print('  -t X Set the template of the renamed file name')
+    print('  -w   Use the time now instead of mtime for strftime format strings')
+    print('  -L   Display program license')
+    print('  -V   Display program version')
     print(textwrap.dedent("""\
           Substitutions:
             %{UNIQSUFF} the unique suffix in the list of all files
@@ -160,7 +169,7 @@ def usage(config: Dict[str, str]):
 def rename(argv: List[str]):
     'Rename files according to given criteria'
     try:
-        optlist, args = getopt.getopt(argv[1:], '?c:d:hmnt:wL')
+        optlist, args = getopt.getopt(argv[1:], '?c:d:hmnt:wLV')
     except getopt.error:
         logging.critical('Unsupported command-line parameter')
         return 1
@@ -207,6 +216,10 @@ def rename(argv: List[str]):
 
         elif opt == '-L':
             print(license, end='')
+            return 0
+
+        elif opt == '-V':
+            print(f'renuniq ver. {__version__}')
             return 0
 
     # Read the config file before displaying help
