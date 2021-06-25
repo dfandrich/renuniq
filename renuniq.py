@@ -3,6 +3,7 @@
 # name to make a unique name
 # Dan Fandrich
 
+from dataclasses import dataclass
 import getopt
 import logging
 import os
@@ -12,6 +13,7 @@ import shutil
 import stat
 import subprocess
 import sys
+import textwrap
 import time
 from typing import Dict, List, Mapping
 
@@ -129,22 +131,24 @@ def safemove(fr: str, to: str):
 
 
 def usage(config: Dict[str, str]):
+    'Show program usage information'
     print('Usage: renuniq [-?hmnwL] [-c countstart] [-d descriptor] [-t template] filename...')
     print('  -m  Turn off strftime variable substitution in template')
     print("  -n  Print what would be executed but don't actually do it")
     print('  -w  Use the time now instead of mtime for strftime format strings')
     print('  -L  Display program license')
-    print('''Substitutions:
-%{UNIQSUFF} the unique suffix in the list of all files
-%{DIR}      directory including trailing slash
-%{NAME}     file name
-%{PATH}     full name
-%{EXT}      file extension (section including the last .)
-%{NOTEXT}   file name up to the last .
-%{DESC}     user-specified descriptor
-%{NUM}      a 0-padded positive increasing integer of automatic width
-%{NUMn}     a 0-padded positive increasing integer of width n (1<=n<=6)
-strftime parameters on the modification time are also allowed, e.g. %Y, %m, %d''')
+    print(textwrap.dedent("""\
+          Substitutions:
+            %{UNIQSUFF} the unique suffix in the list of all files
+            %{DIR}      directory including trailing slash
+            %{NAME}     file name
+            %{PATH}     full name
+            %{EXT}      file extension (section including the last .)
+            %{NOTEXT}   file name up to the last .
+            %{DESC}     user-specified descriptor
+            %{NUM}      a 0-padded positive increasing integer of automatic width
+            %{NUMn}     a 0-padded positive increasing integer of width n (1<=n<=6)
+          strftime parameters on the modification time are also allowed, e.g. %Y, %m, %d"""))
     print(f'Default template with no descriptor given: {config["default_template"]}')
     if config['default_template_single'] != config['default_template']:
         print(f'...for only a single file argument: {config["default_template_single"]}')
@@ -154,47 +158,52 @@ strftime parameters on the modification time are also allowed, e.g. %Y, %m, %d''
 
 
 def rename(argv: List[str]):
+    'Rename files according to given criteria'
     try:
         optlist, args = getopt.getopt(argv[1:], '?c:d:hmnt:wL')
     except getopt.error:
         logging.critical('Unsupported command-line parameter')
         return 1
 
-    show_usage = 0
-    names = args
-    template = ''
-    descriptor = ''
-    strftime_enable = 1
-    dry_run = 0
-    count = 1
-    use_time_now = 0
+    @dataclass
+    class Opts:
+        names: List[str]
+        show_usage: bool = False
+        template: str = ''
+        descriptor: str = ''
+        strftime_enable: bool = True
+        dry_run: bool = False
+        count: int = 1
+        use_time_now: bool = False
+
+    opts = Opts(names=args)
 
     for opt, arg in optlist:
         if opt == '-h' or \
            opt == '-?':
-            show_usage = 1
+            opts.show_usage = True
 
         elif opt == '-c':
             try:
-                count = int(arg)
+                opts.count = int(arg)
             except ValueError:
                 logging.critical('-c takes a numeric argument')
                 return 1
 
         elif opt == '-d':
-            descriptor = arg
+            opts.descriptor = arg
 
         elif opt == '-m':
-            strftime_enable = not strftime_enable
+            opts.strftime_enable = not opts.strftime_enable
 
         elif opt == '-n':
-            dry_run = not dry_run
+            opts.dry_run = not opts.dry_run
 
         elif opt == '-t':
-            template = arg
+            opts.template = arg
 
         elif opt == '-w':
-            use_time_now = 1
+            opts.use_time_now = True
 
         elif opt == '-L':
             print(license, end='')
@@ -210,52 +219,50 @@ def rename(argv: List[str]):
         except FileNotFoundError:
             pass  # Ignore the case where the file doesn't exist
 
-    if not names:
-        show_usage = 1
+    if not opts.names:
+        opts.show_usage = True
 
-    if show_usage:
+    if opts.show_usage:
         usage(config)
         return 1
 
-    if not template:
-        if descriptor:
-            if len(names) == 1:
-                template = config['default_template_desc_single']
+    if not opts.template:
+        if opts.descriptor:
+            if len(opts.names) == 1:
+                opts.template = config['default_template_desc_single']
             else:
-                template = config['default_template_desc']
+                opts.template = config['default_template_desc']
         else:
-            if len(names) == 1:
-                template = config['default_template_single']
+            if len(opts.names) == 1:
+                opts.template = config['default_template_single']
             else:
-                template = config['default_template']
+                opts.template = config['default_template']
 
     # What is the shortest suffix that will make a new name unique?
-    pathprefix = os.path.commonprefix(names)
+    pathprefix = os.path.commonprefix(opts.names)
     dirprefix = os.path.dirname(pathprefix)
     prefix = os.path.basename(pathprefix)
-    if dirprefix != os.path.dirname(names[0]):
+    if dirprefix != os.path.dirname(opts.names[0]):
         prefix = ''
     # Renaming a single file is a special case
-    if len(names) < 2:
+    if len(opts.names) < 2:
         extpos = prefix.rfind('.')
-        if extpos >= 0:
-            prefix = prefix[:extpos]
-        else:
-            prefix = ''
+        prefix = prefix[:extpos] if extpos >= 0 else ''
 
     logging.debug(f'pathprefix={pathprefix}')
     logging.debug(f'dirprefix={dirprefix}')
     logging.debug(f'prefix={prefix}')
 
-    if strftime_enable and use_time_now:
+    if opts.strftime_enable and opts.use_time_now:
         times = time.localtime(time.time())
 
-    countmax = count + len(names) - 1
+    countmax = opts.count + len(opts.names) - 1
     errors = 0
 
     # Loop around all files, renaming them
-    for f in names:
-        if strftime_enable and not use_time_now:
+    count = opts.count
+    for f in opts.names:
+        if opts.strftime_enable and not opts.use_time_now:
             try:
                 times = getmtime(f)
             except OSError:
@@ -263,18 +270,20 @@ def rename(argv: List[str]):
                 errors += 1
                 continue
 
-        substitutions = make_subst_dict(f, prefix, descriptor)
+        substitutions = make_subst_dict(f, prefix, opts.descriptor)
         substitute = Substitute(substitutions, count, len(repr(countmax)))
         count += 1
 
         try:
-            newname = substvars(template, substitute)
+            # Substitute renuniq variables
+            newname = substvars(opts.template, substitute)
         except KeyError as attr:
             logging.error(f'Unknown substitution variable {attr}')
             errors += 1
             continue
 
-        if strftime_enable:
+        if opts.strftime_enable:
+            # Substitute strftime variables
             newname = time.strftime(newname, times)
 
         if os.path.isabs(newname):
@@ -289,7 +298,7 @@ def rename(argv: List[str]):
             continue
 
         print(f'mv {shlex.quote(f)} {shlex.quote(newpath)}')
-        if not dry_run:
+        if not opts.dry_run:
             # Beware the race condition here between checking for existence and
             # the actual move!
             try:
@@ -302,6 +311,7 @@ def rename(argv: List[str]):
 
 
 def main():
+    'Start renuniq from the command-line'
     logging.basicConfig(format='%(filename)s: %(message)s', level=LOG_LEVEL)
     exit(rename(sys.argv))
 
