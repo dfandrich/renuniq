@@ -20,6 +20,7 @@ import contextlib
 import io
 import os
 import tempfile
+import textwrap
 import time
 import unittest
 from unittest.mock import patch
@@ -58,6 +59,17 @@ class TestRenuniq(unittest.TestCase):
         dirs = os.listdir(self.staging_dir.name)
         dirs.sort()
         self.assertListEqual(files, dirs)
+
+    def write_config_file(self):
+        """Write a .renuniqrc test file with known contents."""
+        path = os.path.join(self.staging_dir.name, '.renuniqrc')
+        with open(path, 'w') as f:
+            f.write(textwrap.dedent('''\
+                default_template = "DT_%{NUM}"
+                default_template_single = "DTS_%{NUM}"
+                default_template_desc = "DTD_%{DESC}_%{NUM}"
+                default_template_desc_single = "DTDS_%{DESC}_%{NUM}"
+            '''))
 
     def test_help(self):
         output = io.StringIO()
@@ -241,6 +253,42 @@ class TestRenuniq(unittest.TestCase):
         self.assertIn('mv \'d-quote"\' RENAMED_1', output.getvalue())
         self.assertIn('mv \'s-quote\'"\'"\'\' RENAMED_2', output.getvalue())
         self.assertIn('mv \'redirect<\' RENAMED_3', output.getvalue())
+
+    def test_config_dt(self):
+        self.write_config_file()
+
+        rc = renuniq.rename(['UNITTEST', 'file4.x', 'file6.x', 'file10.x'])
+
+        self.assertEqual(rc, 0)
+        self.assertFilesEqual(['.renuniqrc', 'DT_1', 'DT_2', 'DT_3',
+                               'a', 'b', 'file7572', 'withdata'])
+
+    def test_config_dts(self):
+        self.write_config_file()
+
+        rc = renuniq.rename(['UNITTEST', 'a'])
+
+        self.assertEqual(rc, 0)
+        self.assertFilesEqual(['.renuniqrc', 'DTS_1', 'b', 'file10.x', 'file4.x', 'file6.x',
+                               'file7572', 'withdata'])
+
+    def test_config_dtd(self):
+        self.write_config_file()
+
+        rc = renuniq.rename(['UNITTEST', '-d', 'DESC', 'a', 'b'])
+
+        self.assertEqual(rc, 0)
+        self.assertFilesEqual(['.renuniqrc', 'DTD_DESC_1', 'DTD_DESC_2',
+                               'file10.x', 'file4.x', 'file6.x', 'file7572', 'withdata'])
+
+    def test_config_dtds(self):
+        self.write_config_file()
+
+        rc = renuniq.rename(['UNITTEST', '-d', 'DESC', 'a'])
+
+        self.assertEqual(rc, 0)
+        self.assertFilesEqual(['.renuniqrc', 'DTDS_DESC_1', 'b', 'file10.x', 'file4.x', 'file6.x',
+                               'file7572', 'withdata'])
 
     def test_err_write(self):
         # Make directory read-only

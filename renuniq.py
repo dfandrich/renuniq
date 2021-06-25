@@ -34,11 +34,11 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 
 LOG_LEVEL = logging.ERROR  # set to logging.DEBUG for debug logging
 
-CONFIG = {}  # type: dict[str, str]
-CONFIG['default_template'] = '%Y%m%d_%{UNIQSUFF}'
-CONFIG['default_template_single'] = CONFIG['default_template']
-CONFIG['default_template_desc'] = '%Y%m%d_%{DESC}_%{UNIQSUFF}'
-CONFIG['default_template_desc_single'] = CONFIG['default_template_desc']
+DEFAULT_CONFIG = {}  # type: dict[str, str]
+DEFAULT_CONFIG['default_template'] = '%Y%m%d_%{UNIQSUFF}'
+DEFAULT_CONFIG['default_template_single'] = DEFAULT_CONFIG['default_template']
+DEFAULT_CONFIG['default_template_desc'] = '%Y%m%d_%{DESC}_%{UNIQSUFF}'
+DEFAULT_CONFIG['default_template_desc_single'] = DEFAULT_CONFIG['default_template_desc']
 
 
 def getmtime(fn: str) -> time.struct_time:
@@ -128,7 +128,7 @@ def safemove(fr: str, to: str):
         shutil.move(fr, to)
 
 
-def usage():
+def usage(config: Dict[str, str]):
     print('Usage: renuniq [-?hmnwL] [-c countstart] [-d descriptor] [-t template] filename...')
     print('  -m  Turn off strftime variable substitution in template')
     print("  -n  Print what would be executed but don't actually do it")
@@ -145,12 +145,12 @@ def usage():
 %{NUM}      a 0-padded positive increasing integer of automatic width
 %{NUMn}     a 0-padded positive increasing integer of width n (1<=n<=6)
 strftime parameters on the modification time are also allowed, e.g. %Y, %m, %d''')
-    print(f'Default template with no descriptor given: {CONFIG["default_template"]}')
-    if CONFIG['default_template_single'] != CONFIG['default_template']:
-        print(f'...for only a single file argument: {CONFIG["default_template_single"]}')
-    print(f'Default template with descriptor given:    {CONFIG["default_template_desc"]}')
-    if CONFIG['default_template_desc_single'] != CONFIG['default_template_desc']:
-        print(f'...for only a single file argument: {CONFIG["default_template_desc_single"]}')
+    print(f'Default template with no descriptor given: {config["default_template"]}')
+    if config['default_template_single'] != config['default_template']:
+        print(f'...for only a single file argument: {config["default_template_single"]}')
+    print(f'Default template with descriptor given:    {config["default_template_desc"]}')
+    if config['default_template_desc_single'] != config['default_template_desc']:
+        print(f'...for only a single file argument: {config["default_template_desc_single"]}')
 
 
 def rename(argv: List[str]):
@@ -201,29 +201,31 @@ def rename(argv: List[str]):
             return 0
 
     # Read the config file before displaying help
+    config = DEFAULT_CONFIG.copy()
     if 'HOME' in os.environ:
         config_path = os.path.join(os.environ['HOME'], '.renuniqrc')
         if os.path.exists(config_path):
-            exec(open(config_path).read(), None, CONFIG)
+            with open(config_path) as f:
+                exec(f.read(), None, config)
 
     if not names:
         show_usage = 1
 
     if show_usage:
-        usage()
+        usage(config)
         return 1
 
     if not template:
         if descriptor:
             if len(names) == 1:
-                template = CONFIG['default_template_desc_single']
+                template = config['default_template_desc_single']
             else:
-                template = CONFIG['default_template_desc']
+                template = config['default_template_desc']
         else:
             if len(names) == 1:
-                template = CONFIG['default_template_single']
+                template = config['default_template_single']
             else:
-                template = CONFIG['default_template']
+                template = config['default_template']
 
     # What is the shortest suffix that will make a new name unique?
     pathprefix = os.path.commonprefix(names)
