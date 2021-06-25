@@ -204,9 +204,11 @@ def rename(argv: List[str]):
     config = DEFAULT_CONFIG.copy()
     if 'HOME' in os.environ:
         config_path = os.path.join(os.environ['HOME'], '.renuniqrc')
-        if os.path.exists(config_path):
+        try:
             with open(config_path) as f:
                 exec(f.read(), None, config)
+        except FileNotFoundError:
+            pass  # Ignore the case where the file doesn't exist
 
     if not names:
         show_usage = 1
