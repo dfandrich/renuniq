@@ -48,6 +48,24 @@ DEFAULT_CONFIG['default_template_desc'] = '%Y%m%d_%{DESC}_%{UNIQSUFF}'
 DEFAULT_CONFIG['default_template_desc_single'] = DEFAULT_CONFIG['default_template_desc']
 
 
+def read_config(config: Dict[str, str]):
+    'Read the configuration files.'
+    home = os.environ['HOME'] if 'HOME' in os.environ else '/'
+    if 'XDG_CONFIG_HOME' in os.environ:
+        xdg_dir = os.environ['XDG_CONFIG_HOME']
+    else:
+        xdg_dir = os.path.join(home, '.config')
+
+    # Reading XDG config dir first, then home dir config
+    for config_path in [os.path.join(xdg_dir, 'renuniqrc'), os.path.join(home, '.renuniqrc')]:
+        try:
+            with open(config_path) as f:
+                logging.debug(f'reading config {config_path}')
+                exec(f.read(), None, config)
+        except FileNotFoundError:
+            pass  # Ignore the case where the file doesn't exist
+
+
 def getmtime(fn: str) -> time.struct_time:
     return time.localtime(os.stat(fn)[stat.ST_MTIME])
 
@@ -218,13 +236,7 @@ def rename(argv: List[str]):
 
     # Read the config file before displaying help
     config = DEFAULT_CONFIG.copy()
-    if 'HOME' in os.environ:
-        config_path = os.path.join(os.environ['HOME'], '.renuniqrc')
-        try:
-            with open(config_path) as f:
-                exec(f.read(), None, config)
-        except FileNotFoundError:
-            pass  # Ignore the case where the file doesn't exist
+    read_config(config)
 
     if not opts.names:
         opts.show_usage = True

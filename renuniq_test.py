@@ -46,7 +46,9 @@ class TestRenuniq(unittest.TestCase):
             f.write('withdata')
 
         # Make sure the user's config file is ignored
-        self.old_env_patcher = patch.dict('os.environ', {'HOME': self.staging_dir.name})
+        self.old_env_patcher = patch.dict('os.environ', {
+            'HOME': self.staging_dir.name,
+            'XDG_CONFIG_HOME': os.path.join(self.staging_dir.name, 'xdg-config')})
         self.old_env_patcher.start()
 
     def tearDown(self):
@@ -68,6 +70,7 @@ class TestRenuniq(unittest.TestCase):
                 default_template = "DT_%{NUM}"
                 default_template_single = "DTS_%{NUM}"
                 default_template_desc = "DTD_%{DESC}_%{NUM}"
+                # Make sure a comment works
                 default_template_desc_single = "DTDS_%{DESC}_%{NUM}"
             '''))
 
@@ -299,6 +302,19 @@ class TestRenuniq(unittest.TestCase):
         self.assertEqual(rc, 0)
         self.assertFilesEqual(['.renuniqrc', 'DTDS_DESC_1', 'b', 'file10.x', 'file4.x', 'file6.x',
                                'file7572', 'withdata'])
+
+    def test_config_xdg(self):
+        # make sure a config file in the XDG dir loads, too
+        configdir = os.path.join(self.staging_dir.name, 'xdg-config')
+        os.mkdir(configdir)
+        with open(os.path.join(configdir, 'renuniqrc'), 'w') as f:
+            f.write('default_template_single = "FOUND_CONFIG_%{NUM}"')
+
+        rc = renuniq.rename(['UNITTEST', 'a'])
+
+        self.assertEqual(rc, 0)
+        self.assertFilesEqual(['FOUND_CONFIG_1', 'b', 'file10.x', 'file4.x', 'file6.x',
+                               'file7572', 'withdata', 'xdg-config'])
 
     def test_err_write(self):
         # Make directory read-only

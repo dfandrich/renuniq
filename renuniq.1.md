@@ -112,10 +112,12 @@ use the command:
 **renuniq** returns 0 on success or 1 on failure.
 
 # FILES
-**$HOME/.renuniqrc**
+**`$XDG_CONFIG_HOME/renuniqrc`**
 
-The default templates can be changed by adding options to this file. The file
-consists primarily of lines matching:
+**`$HOME/.renuniqrc`**
+
+The default templates can be changed by adding options to one of these files.
+The file consists primarily of lines matching:
 
     option="value"
 
@@ -154,5 +156,6 @@ the Free Software Foundation; either version 2 of the License, or
 # SEE ALSO
 The **renuniq** project is at <https://github.com/dfandrich/renuniq>
 
+**mmv**(1),
 **mv**(1),
 **strftime**(3)
