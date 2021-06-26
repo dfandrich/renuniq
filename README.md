@@ -21,9 +21,10 @@ and install the latest release of code from Github with:
 
     pip3 install https://glare.now.sh/dfandrich/renuniq/tar
 
-Generate the man page using pandoc with the command:
+Generate the man page from a local repository using pandoc (which must be
+installed separately) with the command:
 
-  pandoc renuniq.1.md -s -t man -o renuniq.1
+    python3 setup.py build_pandoc
 
 The man page needs to be copied manually into the proper location with a
 command like:
