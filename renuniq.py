@@ -102,13 +102,7 @@ def make_subst_dict(fn: str, prefix: str, descriptor: str) -> Dict[str, str]:
     # Add a trailing / if necessary
     direct = os.path.join(direct, '')
     endname = base[len(prefix):]
-    extpos = base.rfind('.')
-    if extpos >= 0:
-        ext = base[extpos:]
-        notext = base[:extpos]
-    else:
-        ext = ''
-        notext = base
+    notext, ext = os.path.splitext(base)
     logging.debug(f'endname={endname}')
     logging.debug(f'ext={ext}')
 
