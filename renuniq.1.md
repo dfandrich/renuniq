@@ -3,7 +3,7 @@ title: renuniq
 section: 1
 header: User Manual
 footer: renuniq ver. 1
-date: June 24, 2021
+date: June 28, 2021
 ---
 # NAME
 renuniq - Rename files following a user-defined template.

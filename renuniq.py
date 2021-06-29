@@ -6,7 +6,7 @@ the name to make it unique, or a myriad of other ways.
 """
 
 __author__ = 'Dan Fandrich'
-__version__ = '0'
+__version__ = '1'
 
 from dataclasses import dataclass
 import getopt
