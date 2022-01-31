@@ -158,4 +158,5 @@ The **renuniq** project is at <https://github.com/dfandrich/renuniq>
 
 **mmv**(1),
 **mv**(1),
+**rename**(1),
 **strftime**(3)
