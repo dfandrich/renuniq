@@ -7,8 +7,8 @@ the name to make it unique, or a myriad of other ways.
 
 __author__ = 'Dan Fandrich'
 __version__ = '2-dev'
+__license__ = 'GPLv2+'
 
-from dataclasses import dataclass
 import getopt
 import logging
 import os
@@ -20,9 +20,10 @@ import subprocess
 import sys
 import textwrap
 import time
+from dataclasses import dataclass
 from typing import Dict, List, Mapping
 
-license = """\
+LICENSE = """\
 Copyright 2006-2021 by Daniel Fandrich <dan@coneharvesters.com>
 This program is free software; you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
@@ -124,15 +125,15 @@ def make_subst_dict(fn: str, prefix: str, descriptor: str) -> Dict[str, str]:
     logging.debug(f'endname={endname}')
     logging.debug(f'ext={ext}')
 
-    dict = {}  # type: dict[str, str]
-    dict['UNIQSUFF'] = endname
-    dict['DIR'] = direct
-    dict['NAME'] = base
-    dict['PATH'] = fn
-    dict['EXT'] = ext
-    dict['NOTEXT'] = notext
-    dict['DESC'] = descriptor
-    return dict
+    subst = {}  # type: dict[str, str]
+    subst['UNIQSUFF'] = endname
+    subst['DIR'] = direct
+    subst['NAME'] = base
+    subst['PATH'] = fn
+    subst['EXT'] = ext
+    subst['NOTEXT'] = notext
+    subst['DESC'] = descriptor
+    return subst
 
 
 def safemove(fr: str, to: str):
@@ -227,7 +228,7 @@ def rename(argv: List[str]):
             opts.use_time_now = True
 
         elif opt == '-L':
-            print(license, end='')
+            print(LICENSE, end='')
             return 0
 
         elif opt == '-V':
