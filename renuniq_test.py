@@ -18,6 +18,7 @@
 
 import contextlib
 import io
+import logging
 import os
 import tempfile
 import textwrap
@@ -107,6 +108,8 @@ class TestRenuniq(unittest.TestCase):
     def test_bad_option(self):
         output = io.StringIO()
         with contextlib.redirect_stderr(output):
+            # Needed to send messages to stderr under pytest
+            logging.basicConfig(force=True)
             rc = renuniq.rename(['UNITTEST', '-^'])
         self.assertEqual(rc, 1)
         self.assertIn('Unsupported command-line', output.getvalue())
