@@ -251,6 +251,26 @@ class TestRenuniq(unittest.TestCase):
                 ['RENAMED_01', 'RENAMED_02', 'RENAMED_03', 'RENAMED_04', 'RENAMED_05',
                  'RENAMED_06', 'RENAMED_07', 'RENAMED_08', 'RENAMED_09', 'RENAMED_10'])
 
+    def test_count(self):
+        rc = renuniq.rename(['UNITTEST', '-t', 'TST_%{NUM}',
+                             'a', 'b', 'file10.x', 'file4.x', 'file6.x', 'file7572', 'withdata'])
+        self.assertEqual(rc, 0)
+        self.assertFilesEqual(
+                ['TST_1', 'TST_2', 'TST_3', 'TST_4', 'TST_5', 'TST_6', 'TST_7'])
+
+    def test_startcount(self):
+        rc = renuniq.rename(['UNITTEST', '-t', 'TST_%{NUM}', '-c', '70',
+                             'a', 'b', 'file10.x', 'file4.x', 'file6.x', 'file7572', 'withdata'])
+        self.assertEqual(rc, 0)
+        self.assertFilesEqual(
+                ['TST_70', 'TST_71', 'TST_72', 'TST_73', 'TST_74', 'TST_75', 'TST_76'])
+
+    def test_startcountwidth(self):
+        rc = renuniq.rename(['UNITTEST', '-t', 'TST_%{NUM}', '-c', '9', 'a', 'b'])
+        self.assertEqual(rc, 0)
+        self.assertFilesEqual(['TST_09', 'TST_10', 'file10.x', 'file4.x', 'file6.x', 'file7572',
+                               'withdata'])
+
     def test_quote_filenames(self):
         # Create some names that need special quoting
         for name in ('d-quote"', "s-quote'", 'redirect<'):
