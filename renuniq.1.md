@@ -3,13 +3,13 @@ title: renuniq
 section: 1
 header: User Manual
 footer: renuniq ver. 1
-date: June 28, 2021
+date: November 28, 2023
 ---
 # NAME
 renuniq - Rename files following a user-defined template.
 
 # SYNOPSIS
-**renuniq** [**-?hmnwLV**] [**-c** countstart] [**-d** descriptor] [**-t** template] *filename ...*
+**renuniq** [**-?hmnwLV**] [**-c** countstart] [**-d** descriptor] [**-i** increment] [**-t** template] *filename ...*
 
 # DESCRIPTION
 **renuniq** is a program to rename batches of files in a user-specified
@@ -61,12 +61,17 @@ literally, double it to '%%'.
 
 # OPTIONS
 **-c** *countstart*
-: Start the sequential count at this integer. This is 1 by default.
+: Start the sequential count used by the %{NUMx} template strings at this
+integer. This is 1 by default.
 
 **-d** *descriptor*
 : Set the value of the substitution variable %{DESC}. This option is used to
 create a default rename template with a placeholder than can easily be switched
 from one run to another.
+
+**-i** *increment*
+: How much of an increase for each iteration in %{NUMx}.  This is 1 by
+default.
 
 **-m**
 : Turn off strftime variable substitution in template. Any % characters will
@@ -98,15 +103,24 @@ command:
 
     renuniq -t '%Y%m%d_%{DESC}_%{NUM}%{EXT}' -d my_holiday img*
 
+or the equivalent:
+
+    renuniq -t '%Y%m%d_my_holiday_%{NUM}%{EXT}' img*
+
 To rename the files **color-red**, **color-blue**, **color-green** to **colour-red**,
 **colour-blue**, **colour-green**, use the command:
 
     renuniq -t 'colour-%{UNIQSUFF}' color-*
 
-To rename all 100 files in a directory to **file001**, **file002**, and so on,
+To rename all 99 files in a directory to **file001**, **file002**, and so on,
 use the command:
 
-    renuniq -t 'file%{NUM}' *
+    renuniq -t 'file%{NUM3}' *
+
+To rename files with **even** in the name with an even number, use a command
+like:
+
+    renuniq -t 'file%{NUM}' -c 2 -i 2 *even*
 
 # EXIT STATUS
 **renuniq** returns 0 on success or 1 on failure.

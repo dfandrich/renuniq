@@ -24,7 +24,7 @@ from dataclasses import dataclass
 from typing import Dict, List, Mapping
 
 LICENSE = """\
-Copyright 2006-2021 by Daniel Fandrich <dan@coneharvesters.com>
+Copyright 2006-2023 by Daniel Fandrich <dan@coneharvesters.com>
 This program is free software; you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
 the Free Software Foundation; either version 2 of the License, or
@@ -150,9 +150,11 @@ def safemove(fr: str, to: str):
 
 def usage(config: Dict[str, str]):
     'Show program usage information'
-    print('Usage: renuniq [-?hmnwLV] [-c countstart] [-d descriptor] [-t template] filename...')
+    print('Usage: renuniq [-?hmnwLV] [-c countstart] [-d descriptor] [-i interval] [-t template] '
+          'filename...')
     print('  -c N Start the sequential count at this integer')
     print('  -d X Set the value of the substitution variable %{DESC}')
+    print('  -i N Increment the count by this integer')
     print('  -m   Turn off strftime variable substitution in template')
     print("  -n   Print what would be executed but don't actually do it")
     print('  -t X Set the template of the renamed file name')
@@ -182,7 +184,7 @@ def usage(config: Dict[str, str]):
 def rename(argv: List[str]):
     'Rename files according to given criteria'
     try:
-        optlist, args = getopt.getopt(argv[1:], '?c:d:hmnt:wLV')
+        optlist, args = getopt.getopt(argv[1:], '?c:d:hi:mnt:wLV')
     except getopt.error:
         logging.critical('Unsupported command-line parameter')
         return 1
@@ -196,6 +198,7 @@ def rename(argv: List[str]):
         strftime_enable: bool = True
         dry_run: bool = False
         count: int = 1
+        interval: int = 1
         use_time_now: bool = False
 
     opts = Opts(names=args)
@@ -214,6 +217,13 @@ def rename(argv: List[str]):
 
         elif opt == '-d':
             opts.descriptor = arg
+
+        elif opt == '-i':
+            try:
+                opts.interval = int(arg)
+            except ValueError:
+                logging.critical('-i takes a numeric argument')
+                return 1
 
         elif opt == '-m':
             opts.strftime_enable = not opts.strftime_enable
@@ -276,7 +286,7 @@ def rename(argv: List[str]):
     if opts.strftime_enable and opts.use_time_now:
         times = time.localtime(time.time())
 
-    countmax = opts.count + len(opts.names) - 1
+    countmax = opts.count + (opts.interval * (len(opts.names) - 1))
     errors = 0
 
     # Loop around all files, renaming them
@@ -292,7 +302,7 @@ def rename(argv: List[str]):
 
         substitutions = make_subst_dict(f, prefix, opts.descriptor)
         substitute = Substitute(substitutions, count, len(repr(countmax)))
-        count += 1
+        count += opts.interval
 
         try:
             # Substitute renuniq variables

@@ -271,6 +271,31 @@ class TestRenuniq(unittest.TestCase):
         self.assertFilesEqual(['TST_09', 'TST_10', 'file10.x', 'file4.x', 'file6.x', 'file7572',
                                'withdata'])
 
+    def test_interval(self):
+        rc = renuniq.rename(['UNITTEST', '-t', 'TST_%{NUM}', '-i', '3', 'a', 'b', 'file10.x'])
+        self.assertEqual(rc, 0)
+        self.assertFilesEqual(['TST_1', 'TST_4', 'TST_7', 'file4.x', 'file6.x', 'file7572',
+                               'withdata'])
+
+    def test_intervalwidth(self):
+        rc = renuniq.rename(['UNITTEST', '-t', 'TST_%{NUM}', '-i', '8', 'a', 'b', 'file10.x'])
+        self.assertEqual(rc, 0)
+        self.assertFilesEqual(['TST_01', 'TST_09', 'TST_17', 'file4.x', 'file6.x', 'file7572',
+                               'withdata'])
+
+    def test_intervalstartcount(self):
+        rc = renuniq.rename(['UNITTEST', '-t', 'TST_%{NUM}', '-i', '100', '-c', 111,
+                             'a', 'b', 'file10.x', 'file4.x', 'file6.x', 'file7572', 'withdata'])
+        self.assertEqual(rc, 0)
+        self.assertFilesEqual(
+                ['TST_111', 'TST_211', 'TST_311', 'TST_411', 'TST_511', 'TST_611', 'TST_711', ])
+
+    def test_intervalstartcountboundary(self):
+        rc = renuniq.rename(['UNITTEST', '-t', 'TST_%{NUM}', '-i', '100', 'a'])
+        self.assertEqual(rc, 0)
+        self.assertFilesEqual(
+                ['TST_1', 'b', 'file10.x', 'file4.x', 'file6.x', 'file7572', 'withdata'])
+
     def test_quote_filenames(self):
         # Create some names that need special quoting
         for name in ('d-quote"', "s-quote'", 'redirect<'):
