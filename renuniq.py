@@ -9,6 +9,7 @@ __author__ = 'Dan Fandrich'
 __version__ = '2-dev'
 __license__ = 'GPLv2+'
 
+import contextlib
 import getopt
 import logging
 import os
@@ -20,11 +21,11 @@ import subprocess
 import sys
 import textwrap
 import time
+from collections.abc import Mapping
 from dataclasses import dataclass
-from typing import Dict, List, Mapping
 
 LICENSE = """\
-Copyright 2006-2023 by Daniel Fandrich <dan@coneharvesters.com>
+Copyright 2006-2026 by Daniel Fandrich <dan@coneharvesters.com>
 This program is free software; you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
 the Free Software Foundation; either version 2 of the License, or
@@ -42,29 +43,26 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 
 LOG_LEVEL = logging.ERROR  # set to logging.DEBUG for debug logging
 
-DEFAULT_CONFIG = {}  # type: dict[str, str]
-DEFAULT_CONFIG['default_template'] = '%Y%m%d_%{UNIQSUFF}'
-DEFAULT_CONFIG['default_template_single'] = DEFAULT_CONFIG['default_template']
-DEFAULT_CONFIG['default_template_desc'] = '%Y%m%d_%{DESC}_%{UNIQSUFF}'
-DEFAULT_CONFIG['default_template_desc_single'] = DEFAULT_CONFIG['default_template_desc']
+DEFAULT_CONFIG = {
+    'default_template': '%Y%m%d_%{UNIQSUFF}',
+    'default_template_desc': '%Y%m%d_%{DESC}_%{UNIQSUFF}'
+}
+DEFAULT_CONFIG |= {
+    'default_template_single': DEFAULT_CONFIG['default_template'],
+    'default_template_desc_single': DEFAULT_CONFIG['default_template_desc']
+}
 
 
-def read_config(config: Dict[str, str]):
-    'Read the configuration files.'
-    home = os.environ['HOME'] if 'HOME' in os.environ else '/'
-    if 'XDG_CONFIG_HOME' in os.environ:
-        xdg_dir = os.environ['XDG_CONFIG_HOME']
-    else:
-        xdg_dir = os.path.join(home, '.config')
+def read_config(config: dict[str, str]):
+    """Read the configuration files."""
+    home = os.environ.get('HOME', '/')
+    xdg_dir = os.environ.get('XDG_CONFIG_HOME', os.path.join(home, '.config'))
 
     # Reading XDG config dir first, then home dir config
     for config_path in [os.path.join(xdg_dir, 'renuniqrc'), os.path.join(home, '.renuniqrc')]:
-        try:
-            with open(config_path) as f:
-                logging.debug(f'reading config {config_path}')
-                exec(f.read(), None, config)
-        except FileNotFoundError:
-            pass  # Ignore the case where the file doesn't exist
+        with contextlib.suppress(FileNotFoundError), open(config_path) as f:
+            logging.debug(f'reading config {config_path}')
+            exec(f.read(), None, config)  # noqa: S102
 
 
 def getmtime(fn: str) -> time.struct_time:
@@ -72,7 +70,7 @@ def getmtime(fn: str) -> time.struct_time:
 
 
 class Substitute(dict):
-    'Substitute variables for their keys. Looks much like a dict.'
+    """Substitute variables for their keys. Looks much like a dict."""
 
     def __init__(self, d: dict, num: int, num_width: int):
         dict.__init__(self, d)
@@ -80,28 +78,29 @@ class Substitute(dict):
         self.num_width = num_width
 
     def __getitem__(self, attr: str) -> str:
+        """Returns the value of the given attribute, with support for magic NUM* values."""
         if self.__contains__(attr):
             return dict.__getitem__(self, attr)
-        elif attr == 'NUM':
+        if attr == 'NUM':
             attr = f'NUM{self.num_width}'
 
         if attr == 'NUM1':
             return f'{self.number:01d}'
-        elif attr == 'NUM2':
+        if attr == 'NUM2':
             return f'{self.number:02d}'
-        elif attr == 'NUM3':
+        if attr == 'NUM3':
             return f'{self.number:03d}'
-        elif attr == 'NUM4':
+        if attr == 'NUM4':
             return f'{self.number:04d}'
-        elif attr == 'NUM5':
+        if attr == 'NUM5':
             return f'{self.number:05d}'
-        elif attr == 'NUM6':
+        if attr == 'NUM6':
             return f'{self.number:06d}'
         raise KeyError(attr)
 
 
 def substvars(s: str, substdict: Mapping[str, str]) -> str:
-    'Substitute %{foo} strings in s with the key in substdict'
+    """Substitute %{foo} strings in s with the key in substdict."""
     newpieces = []
     laststart = 0
     for i in re.finditer('%{([A-Za-z_0-9]*)}', s):
@@ -114,8 +113,8 @@ def substvars(s: str, substdict: Mapping[str, str]) -> str:
     return ''.join(newpieces)
 
 
-def make_subst_dict(fn: str, prefix: str, descriptor: str) -> Dict[str, str]:
-    'Create a substitution dictionary from the file information'
+def make_subst_dict(fn: str, prefix: str, descriptor: str) -> dict[str, str]:
+    """Create a substitution dictionary from the file information."""
     base = os.path.basename(fn)
     direct = os.path.dirname(fn)
     # Add a trailing / if necessary
@@ -125,31 +124,29 @@ def make_subst_dict(fn: str, prefix: str, descriptor: str) -> Dict[str, str]:
     logging.debug(f'endname={endname}')
     logging.debug(f'ext={ext}')
 
-    subst = {}  # type: dict[str, str]
-    subst['UNIQSUFF'] = endname
-    subst['DIR'] = direct
-    subst['NAME'] = base
-    subst['PATH'] = fn
-    subst['EXT'] = ext
-    subst['NOTEXT'] = notext
-    subst['DESC'] = descriptor
-    return subst
+    return {
+        'UNIQSUFF': endname,
+        'DIR': direct,
+        'NAME': base,
+        'PATH': fn,
+        'EXT': ext,
+        'NOTEXT': notext,
+        'DESC': descriptor
+    }
 
 
 def safemove(fr: str, to: str):
-    'Safely move a file, potentially across filesystems'
+    """Safely move a file, potentially across filesystems."""
     try:
-        rc = subprocess.run(['mv', fr, to])
-        if rc.returncode:
-            raise PermissionError  # The most likely cause of error, but may be wrong
+        subprocess.run(['mv', fr, to], check=True)
     except FileNotFoundError:
         # 'mv' couldn't be found. Fall back to Python-native move. This is inferior, as the
         # comments for the function admit, but it's better than nothing.
         shutil.move(fr, to)
 
 
-def usage(config: Dict[str, str]):
-    'Show program usage information'
+def usage(config: dict[str, str]):
+    """Show program usage information."""
     print('Usage: renuniq [-?hmnwLV] [-c countstart] [-d descriptor] [-i interval] [-t template] '
           'filename...')
     print('  -c N Start the sequential count at this integer')
@@ -181,8 +178,8 @@ def usage(config: Dict[str, str]):
         print(f'...for only a single file argument: {config["default_template_desc_single"]}')
 
 
-def rename(argv: List[str]):
-    'Rename files according to given criteria'
+def rename(argv: list[str]) -> int:
+    """Rename files according to given criteria."""
     try:
         optlist, args = getopt.getopt(argv[1:], '?c:d:hi:mnt:wLV')
     except getopt.error:
@@ -191,7 +188,7 @@ def rename(argv: List[str]):
 
     @dataclass
     class Opts:
-        names: List[str]
+        names: list[str]
         show_usage: bool = False
         template: str = ''
         descriptor: str = ''
@@ -241,7 +238,7 @@ def rename(argv: List[str]):
             print(LICENSE, end='')
             return 0
 
-        elif opt == '-V':
+        if opt == '-V':
             print(f'renuniq ver. {__version__}')
             return 0
 
@@ -333,7 +330,7 @@ def rename(argv: List[str]):
             # the actual move!
             try:
                 safemove(f, newpath)
-            except PermissionError:
+            except (PermissionError, subprocess.CalledProcessError):
                 logging.error(f'Error renaming {f} to {newpath}')
                 errors += 1
 
@@ -341,10 +338,10 @@ def rename(argv: List[str]):
 
 
 def main():
-    'Start renuniq from the command-line'
+    """Start renuniq from the command-line."""
     logging.basicConfig(format='%(filename)s: %(message)s', level=LOG_LEVEL)
-    exit(rename(sys.argv))
+    return rename(sys.argv)
 
 
 if __name__ == '__main__':
-    main()
+    sys.exit(main())

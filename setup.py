@@ -1,4 +1,5 @@
-# renuniq setuptools build file
+"""renuniq setuptools build file."""
+
 import distutils
 import os
 
@@ -8,7 +9,7 @@ from setuptools import Command, setup
 class BuildDocsCommand(Command):
     """Custom setuptools command to build man page using pandoc."""
     description = 'Build documentation with pandoc'
-    user_options = []
+    user_options = []  # noqa: RUF012
 
     def initialize_options(self):
         self.pandoc_files = []
@@ -25,9 +26,9 @@ class BuildDocsCommand(Command):
                 # Use a safer file given an unexpected filename
                 fn = os.path.join(in_file, '.out')
             command = ['pandoc', in_file, '-s', '-t', 'man', '-o', fn]
-            self.announce('Running command: %s' % ' '.join(command), level=distutils.log.INFO)
+            self.announce(f'Running command: {" ".join(command)}', level=distutils.log.INFO)
             self.spawn(command)
 
 
-if __name__ == "__main__":
+if __name__ == '__main__':
     setup(cmdclass={'build_pandoc': BuildDocsCommand})

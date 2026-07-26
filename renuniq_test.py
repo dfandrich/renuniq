@@ -67,13 +67,13 @@ class TestRenuniq(unittest.TestCase):
         """Write a .renuniqrc test file with known contents."""
         path = os.path.join(self.staging_dir.name, '.renuniqrc')
         with open(path, 'w') as f:
-            f.write(textwrap.dedent('''\
+            f.write(textwrap.dedent("""\
                 default_template = "DT_%{NUM}"
                 default_template_single = "DTS_%{NUM}"
                 default_template_desc = "DTD_%{DESC}_%{NUM}"
                 # Make sure a comment works
                 default_template_desc_single = "DTDS_%{DESC}_%{NUM}"
-            '''))
+            """))
 
     def test_help(self):
         output = io.StringIO()
@@ -119,36 +119,36 @@ class TestRenuniq(unittest.TestCase):
 
         self.assertEqual(rc, 0)
         self.assertFilesEqual(
-                ['20210102_10.x', '20210102_4.x', '20210102_6.x', 'a', 'b', 'file7572', 'withdata'])
+            ['20210102_10.x', '20210102_4.x', '20210102_6.x', 'a', 'b', 'file7572', 'withdata'])
 
     def test_standard_template_single(self):
         rc = renuniq.rename(['UNITTEST', 'file4.x'])
 
         self.assertEqual(rc, 0)
         self.assertFilesEqual(
-                ['20210102_.x', 'a', 'b', 'file10.x', 'file6.x', 'file7572', 'withdata'])
+            ['20210102_.x', 'a', 'b', 'file10.x', 'file6.x', 'file7572', 'withdata'])
 
     def test_standard_template_descriptor(self):
         rc = renuniq.rename(['UNITTEST', '-d', 'DESCRIPTOR', 'file4.x', 'file6.x', 'file10.x'])
 
         self.assertEqual(rc, 0)
         self.assertFilesEqual(
-                ['20210102_DESCRIPTOR_10.x', '20210102_DESCRIPTOR_4.x', '20210102_DESCRIPTOR_6.x',
-                 'a', 'b', 'file7572', 'withdata'])
+            ['20210102_DESCRIPTOR_10.x', '20210102_DESCRIPTOR_4.x', '20210102_DESCRIPTOR_6.x',
+             'a', 'b', 'file7572', 'withdata'])
 
     def test_standard_template_descriptor_single(self):
         rc = renuniq.rename(['UNITTEST', '-d', 'DESCRIPTOR', 'file4.x'])
 
         self.assertEqual(rc, 0)
         self.assertFilesEqual(
-                ['20210102_DESCRIPTOR_.x', 'a', 'b', 'file10.x', 'file6.x', 'file7572', 'withdata'])
+            ['20210102_DESCRIPTOR_.x', 'a', 'b', 'file10.x', 'file6.x', 'file7572', 'withdata'])
 
     def test_single_nosubst(self):
         rc = renuniq.rename(['UNITTEST', '-m', '-t', '%Y%m%d_%{UNIQSUFF}', 'file4.x'])
 
         self.assertEqual(rc, 0)
         self.assertFilesEqual(
-                ['%Y%m%d_.x', 'a', 'b', 'file10.x', 'file6.x', 'file7572', 'withdata'])
+            ['%Y%m%d_.x', 'a', 'b', 'file10.x', 'file6.x', 'file7572', 'withdata'])
 
     @patch('renuniq.time.time', return_value=time.mktime(time.strptime('20210202', '%Y%m%d')))
     def test_time_now(self, mock_time):
@@ -156,14 +156,14 @@ class TestRenuniq(unittest.TestCase):
 
         self.assertEqual(rc, 0)
         self.assertFilesEqual(
-                ['20210202_.x', 'a', 'b', 'file10.x', 'file6.x', 'file7572', 'withdata'])
+            ['20210202_.x', 'a', 'b', 'file10.x', 'file6.x', 'file7572', 'withdata'])
 
     def test_rename_order(self):
         rc = renuniq.rename(['UNITTEST', '-t', 'TST_%{UNIQSUFF}', 'withdata', 'file4.x'])
 
         self.assertEqual(rc, 0)
         self.assertFilesEqual(
-                ['TST_file4.x', 'TST_withdata', 'a', 'b', 'file10.x', 'file6.x', 'file7572'])
+            ['TST_file4.x', 'TST_withdata', 'a', 'b', 'file10.x', 'file6.x', 'file7572'])
         with open('TST_withdata') as f:
             self.assertEqual(f.read(), 'withdata')
 
@@ -175,19 +175,19 @@ class TestRenuniq(unittest.TestCase):
 
         self.assertEqual(rc, 0)
         self.assertFilesEqual(
-                ['a', 'b', 'file10.x', 'file4.x', 'file6.x', 'file7572', 'withdata'])
+            ['a', 'b', 'file10.x', 'file4.x', 'file6.x', 'file7572', 'withdata'])
         self.assertIn('mv file4.x RENAMED_4.x', output.getvalue())
         self.assertIn('mv file6.x RENAMED_6.x', output.getvalue())
 
     def test_substitutions(self):
         rc = renuniq.rename(['UNITTEST', '-d', 'DESC', '-t',
-                             'SUB|%{NAME}|%{EXT}|%{NOTEXT}|%{DESC}|%{NUM}|'
-                             '%{NUM1}|%{NUM2}|%{NUM3}|%{NUM4}|%{NUM5}|%{NUM6}|', 'withdata'])
+                             ('SUB|%{NAME}|%{EXT}|%{NOTEXT}|%{DESC}|%{NUM}|'
+                              '%{NUM1}|%{NUM2}|%{NUM3}|%{NUM4}|%{NUM5}|%{NUM6}|'), 'withdata'])
 
         self.assertEqual(rc, 0)
         self.assertFilesEqual(
-                ['SUB|withdata||withdata|DESC|1|1|01|001|0001|00001|000001|', 'a', 'b',
-                 'file10.x', 'file4.x', 'file6.x', 'file7572'])
+            ['SUB|withdata||withdata|DESC|1|1|01|001|0001|00001|000001|', 'a', 'b',
+             'file10.x', 'file4.x', 'file6.x', 'file7572'])
 
     def test_substitution_exts(self):
         rc = renuniq.rename(['UNITTEST', '-d', 'DESC', '-t', 'SUB|%{EXT}|%{NOTEXT}|%{NUM}',
@@ -195,8 +195,8 @@ class TestRenuniq(unittest.TestCase):
 
         self.assertEqual(rc, 0)
         self.assertFilesEqual(
-                ['SUB|.x|file10|3', 'SUB|.x|file4|1', 'SUB|.x|file6|2', 'a', 'b',
-                 'file7572', 'withdata'])
+            ['SUB|.x|file10|3', 'SUB|.x|file4|1', 'SUB|.x|file6|2', 'a', 'b',
+             'file7572', 'withdata'])
 
     def test_substitution_dir_absolute(self):
         rename_file = os.path.join(self.staging_dir.name, 'withdata')
@@ -204,14 +204,14 @@ class TestRenuniq(unittest.TestCase):
 
         self.assertEqual(rc, 0)
         self.assertFilesEqual(
-                ['RENAMED', 'a', 'b', 'file10.x', 'file4.x', 'file6.x', 'file7572'])
+            ['RENAMED', 'a', 'b', 'file10.x', 'file4.x', 'file6.x', 'file7572'])
 
     def test_substitution_dir_cwd(self):
         rc = renuniq.rename(['UNITTEST', '-t', '%{DIR}RENAMED', 'withdata'])
 
         self.assertEqual(rc, 0)
         self.assertFilesEqual(
-                ['RENAMED', 'a', 'b', 'file10.x', 'file4.x', 'file6.x', 'file7572'])
+            ['RENAMED', 'a', 'b', 'file10.x', 'file4.x', 'file6.x', 'file7572'])
 
     def test_substitutions_path_absolute(self):
         rename_file = os.path.join(self.staging_dir.name, 'withdata')
@@ -219,14 +219,14 @@ class TestRenuniq(unittest.TestCase):
 
         self.assertEqual(rc, 0)
         self.assertFilesEqual(
-                ['a', 'b', 'file10.x', 'file4.x', 'file6.x', 'file7572', 'withdata|RENAMED'])
+            ['a', 'b', 'file10.x', 'file4.x', 'file6.x', 'file7572', 'withdata|RENAMED'])
 
     def test_substitutions_path_cwd(self):
         rc = renuniq.rename(['UNITTEST', '-t', '%{PATH}|RENAMED', 'withdata'])
 
         self.assertEqual(rc, 0)
         self.assertFilesEqual(
-                ['a', 'b', 'file10.x', 'file4.x', 'file6.x', 'file7572', 'withdata|RENAMED'])
+            ['a', 'b', 'file10.x', 'file4.x', 'file6.x', 'file7572', 'withdata|RENAMED'])
 
     def test_substitution_name_absolute(self):
         rename_file = os.path.join(self.staging_dir.name, 'withdata')
@@ -234,7 +234,7 @@ class TestRenuniq(unittest.TestCase):
 
         self.assertEqual(rc, 0)
         self.assertFilesEqual(
-                ['SUB|withdata', 'a', 'b', 'file10.x', 'file4.x', 'file6.x', 'file7572'])
+            ['SUB|withdata', 'a', 'b', 'file10.x', 'file4.x', 'file6.x', 'file7572'])
 
     def test_substitution_10(self):
         # Create more files to get to at least 10
@@ -248,22 +248,22 @@ class TestRenuniq(unittest.TestCase):
 
         self.assertEqual(rc, 0)
         self.assertFilesEqual(
-                ['RENAMED_01', 'RENAMED_02', 'RENAMED_03', 'RENAMED_04', 'RENAMED_05',
-                 'RENAMED_06', 'RENAMED_07', 'RENAMED_08', 'RENAMED_09', 'RENAMED_10'])
+            ['RENAMED_01', 'RENAMED_02', 'RENAMED_03', 'RENAMED_04', 'RENAMED_05',
+             'RENAMED_06', 'RENAMED_07', 'RENAMED_08', 'RENAMED_09', 'RENAMED_10'])
 
     def test_count(self):
         rc = renuniq.rename(['UNITTEST', '-t', 'TST_%{NUM}',
                              'a', 'b', 'file10.x', 'file4.x', 'file6.x', 'file7572', 'withdata'])
         self.assertEqual(rc, 0)
         self.assertFilesEqual(
-                ['TST_1', 'TST_2', 'TST_3', 'TST_4', 'TST_5', 'TST_6', 'TST_7'])
+            ['TST_1', 'TST_2', 'TST_3', 'TST_4', 'TST_5', 'TST_6', 'TST_7'])
 
     def test_startcount(self):
         rc = renuniq.rename(['UNITTEST', '-t', 'TST_%{NUM}', '-c', '70',
                              'a', 'b', 'file10.x', 'file4.x', 'file6.x', 'file7572', 'withdata'])
         self.assertEqual(rc, 0)
         self.assertFilesEqual(
-                ['TST_70', 'TST_71', 'TST_72', 'TST_73', 'TST_74', 'TST_75', 'TST_76'])
+            ['TST_70', 'TST_71', 'TST_72', 'TST_73', 'TST_74', 'TST_75', 'TST_76'])
 
     def test_startcountwidth(self):
         rc = renuniq.rename(['UNITTEST', '-t', 'TST_%{NUM}', '-c', '9', 'a', 'b'])
@@ -284,17 +284,17 @@ class TestRenuniq(unittest.TestCase):
                                'withdata'])
 
     def test_intervalstartcount(self):
-        rc = renuniq.rename(['UNITTEST', '-t', 'TST_%{NUM}', '-i', '100', '-c', 111,
+        rc = renuniq.rename(['UNITTEST', '-t', 'TST_%{NUM}', '-i', '100', '-c', '111',
                              'a', 'b', 'file10.x', 'file4.x', 'file6.x', 'file7572', 'withdata'])
         self.assertEqual(rc, 0)
         self.assertFilesEqual(
-                ['TST_111', 'TST_211', 'TST_311', 'TST_411', 'TST_511', 'TST_611', 'TST_711', ])
+            ['TST_111', 'TST_211', 'TST_311', 'TST_411', 'TST_511', 'TST_611', 'TST_711', ])
 
     def test_intervalstartcountboundary(self):
         rc = renuniq.rename(['UNITTEST', '-t', 'TST_%{NUM}', '-i', '100', 'a'])
         self.assertEqual(rc, 0)
         self.assertFilesEqual(
-                ['TST_1', 'b', 'file10.x', 'file4.x', 'file6.x', 'file7572', 'withdata'])
+            ['TST_1', 'b', 'file10.x', 'file4.x', 'file6.x', 'file7572', 'withdata'])
 
     def test_quote_filenames(self):
         # Create some names that need special quoting
@@ -309,11 +309,11 @@ class TestRenuniq(unittest.TestCase):
 
         self.assertEqual(rc, 0)
         self.assertFilesEqual(
-                ['RENAMED_1', 'RENAMED_2', 'RENAMED_3', 'a', 'b', 'file10.x', 'file4.x', 'file6.x',
-                 'file7572', 'withdata'])
+            ['RENAMED_1', 'RENAMED_2', 'RENAMED_3', 'a', 'b', 'file10.x', 'file4.x', 'file6.x',
+             'file7572', 'withdata'])
         self.assertIn('mv \'d-quote"\' RENAMED_1', output.getvalue())
         self.assertIn('mv \'s-quote\'"\'"\'\' RENAMED_2', output.getvalue())
-        self.assertIn('mv \'redirect<\' RENAMED_3', output.getvalue())
+        self.assertIn("mv 'redirect<' RENAMED_3", output.getvalue())
 
     def test_config_dt(self):
         self.write_config_file()
@@ -375,35 +375,35 @@ class TestRenuniq(unittest.TestCase):
 
         self.assertEqual(rc, 1)
         self.assertFilesEqual(
-                ['a', 'b', 'file10.x', 'file4.x', 'file6.x', 'file7572', 'withdata'])
+            ['a', 'b', 'file10.x', 'file4.x', 'file6.x', 'file7572', 'withdata'])
 
     def test_err_nonexistent_file(self):
         rc = renuniq.rename(['UNITTEST', '-t', 'RENAMED_%{NUM}', 'XYZZY', 'a'])
 
         self.assertEqual(rc, 1)
         self.assertFilesEqual(
-                ['RENAMED_1', 'b', 'file10.x', 'file4.x', 'file6.x', 'file7572', 'withdata'])
+            ['RENAMED_1', 'b', 'file10.x', 'file4.x', 'file6.x', 'file7572', 'withdata'])
 
     def test_err_bad_variable(self):
         rc = renuniq.rename(['UNITTEST', '-t', 'RENAMED_%{XYZZY}', 'a'])
 
         self.assertEqual(rc, 1)
         self.assertFilesEqual(
-                ['a', 'b', 'file10.x', 'file4.x', 'file6.x', 'file7572', 'withdata'])
+            ['a', 'b', 'file10.x', 'file4.x', 'file6.x', 'file7572', 'withdata'])
 
     def test_err_overwrite_existing_file(self):
         rc = renuniq.rename(['UNITTEST', '-t', 'withdata', 'a'])
 
         self.assertEqual(rc, 1)
         self.assertFilesEqual(
-                ['a', 'b', 'file10.x', 'file4.x', 'file6.x', 'file7572', 'withdata'])
+            ['a', 'b', 'file10.x', 'file4.x', 'file6.x', 'file7572', 'withdata'])
 
     def test_err_overwrite_renamed_file(self):
         rc = renuniq.rename(['UNITTEST', '-t', 'file%{NUM}.x', 'a', 'b', 'withdata', 'file6.x'])
 
         self.assertEqual(rc, 1)
         self.assertFilesEqual(
-                ['file1.x', 'file10.x', 'file2.x', 'file3.x', 'file4.x', 'file6.x', 'file7572'])
+            ['file1.x', 'file10.x', 'file2.x', 'file3.x', 'file4.x', 'file6.x', 'file7572'])
 
 
 if __name__ == '__main__':
