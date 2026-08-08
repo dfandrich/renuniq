@@ -69,10 +69,10 @@ def getmtime(fn: str) -> time.struct_time:
     return time.localtime(os.stat(fn)[stat.ST_MTIME])
 
 
-class Substitute(dict):
+class Substitute(dict[str, str]):
     """Substitute variables for their keys. Looks much like a dict."""
 
-    def __init__(self, d: dict, num: int, num_width: int):
+    def __init__(self, d: dict[str, str], num: int, num_width: int):
         dict.__init__(self, d)
         self.number = num
         self.num_width = num_width
@@ -280,8 +280,7 @@ def rename(argv: list[str]) -> int:
     logging.debug(f'dirprefix={dirprefix}')
     logging.debug(f'prefix={prefix}')
 
-    if opts.strftime_enable and opts.use_time_now:
-        times = time.localtime(time.time())
+    times = time.localtime(time.time())
 
     countmax = opts.count + (opts.interval * (len(opts.names) - 1))
     errors = 0
