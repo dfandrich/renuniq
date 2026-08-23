@@ -1,4 +1,4 @@
-# Tests for renuniq.py
+"""Test renuniq.py."""
 #
 # Copyright (C) 2021 Daniel Fandrich
 #
@@ -24,12 +24,13 @@ import tempfile
 import textwrap
 import time
 import unittest
-from unittest.mock import patch
+from unittest.mock import Mock, patch
 
 import renuniq
 
 
 class TestRenuniq(unittest.TestCase):
+    """Test renuniq."""
 
     def setUp(self):
         self.staging_dir = tempfile.TemporaryDirectory()
@@ -57,7 +58,7 @@ class TestRenuniq(unittest.TestCase):
         os.chdir(self.old_dir)
         self.staging_dir.cleanup()
 
-    def assertFilesEqual(self, files):
+    def assertFilesEqual(self, files: list[str]):
         """Ensure the set of file names equals what is expected."""
         dirs = os.listdir(self.staging_dir.name)
         dirs.sort()
@@ -151,7 +152,7 @@ class TestRenuniq(unittest.TestCase):
             ['%Y%m%d_.x', 'a', 'b', 'file10.x', 'file6.x', 'file7572', 'withdata'])
 
     @patch('renuniq.time.time', return_value=time.mktime(time.strptime('20210202', '%Y%m%d')))
-    def test_time_now(self, mock_time):
+    def test_time_now(self, mock_time: Mock):
         rc = renuniq.rename(['UNITTEST', '-w', '-t', '%Y%m%d_%{UNIQSUFF}', 'file4.x'])
 
         self.assertEqual(rc, 0)
