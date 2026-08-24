@@ -1,0 +1,117 @@
+[build-system]
+requires = [
+    "setuptools>=61.2",
+    "flake8",
+]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "renuniq"
+description = "Renames files, giving them each unique names"
+version = "2.dev1"
+readme = "README.md"
+authors = [{name = "Dan Fandrich", email = "dan@coneharvesters.com"}]
+license = "GPL-2.0-or-later"
+license-files = ["COPYING"]
+classifiers = [
+    "Programming Language :: Python",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Programming Language :: Python :: 3.14",
+    "Programming Language :: Python :: 3.15",
+    "Operating System :: OS Independent",
+    "Development Status :: 5 - Production/Stable",
+    "Environment :: Console",
+    "Intended Audience :: Users",
+    "Intended Audience :: End Users/Desktop",
+    "Natural Language :: English",
+    "Topic :: Utilities",
+    "Typing :: Typed",
+]
+requires-python = ">=3.9"
+
+[project.optional-dependencies]
+build-docs = [
+    "pypandoc",
+]
+build-docs-full = [
+    "pypandoc",
+    "pypandoc-binary"
+]
+test = [
+    "pytest >= 6, < 10"
+]
+dev = [
+    "flake8 >= 5, < 8",
+    "flake8-assertive",
+    "flake8-bugbear",
+    "flake8-builtins",
+    "flake8-classmethod-staticmethod",
+    "flake8-comprehensions",
+    "flake8-datetimez",
+    "flake8-deprecated",
+    "flake8-docstrings",
+    "flake8-get-chaining",
+    "flake8-if-statements",
+    "flake8-import-order",
+    "flake8-mutable",
+    "flake8-no-pep420",
+    "flake8-noqa",
+    "flake8-picky-parentheses",
+    "flake8-pie",
+    "flake8-plus",
+    "flake8-pyproject",
+    "flake8-quotes",
+    "flake8-raise",
+    "flake8-requirements",
+    "flake8-return",
+    "flake8-sfs",
+    "flake8-simplify",
+    "flake8-super",
+    "flake8-warnings",
+    "flake8-wot",
+    "pyrefly",
+    "pytype >= 2023.9.19",
+    "ruff",
+    "types-requests",
+    "types-zstd"
+]
+
+[project.urls]
+Homepage = "https://github.com/dfandrich/renuniq"
+Repository = "https://github.com/dfandrich/renuniq.git"
+
+[project.scripts]
+renuniq = "renuniq:main"
+
+[tool.setuptools]
+py-modules = ["renuniq"]
+include-package-data = false
+
+# flake8-pyproject must be installed for flake8 to use these settings
+[tool.flake8]
+ignore = ["W503", "E741", "E501", "D102", "D103", "D107", "B001", "IFS001",
+          "NQA102", "PAR101", "PAR103", "PIE803", "PLU002", "SFS301", "SIM115",
+          "SIM904", "INP001"]
+max-line-length = 100
+docstring-convention = "google"
+blanks-before-imports = 1
+noqa-require-code = true
+
+[tool.ruff]
+lint.ignore = ["LOG015"]
+
+[tool.pyrefly]
+project-includes = [
+    "**/*.py*",
+    "**/*.ipynb",
+]
+preset = "strict"
+check-unannotated-defs = true
+
+[tool.pyrefly.errors]
+missing-override-decorator = false

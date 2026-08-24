@@ -1,0 +1,1 @@
+include *_test.py build_docs.py renuniq.1.md
