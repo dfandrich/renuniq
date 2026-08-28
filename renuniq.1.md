@@ -2,7 +2,7 @@
 title: renuniq
 section: 1
 header: User Manual
-footer: renuniq ver. 1
+footer: renuniq ver. 2
 date: November 28, 2023
 ---
 # NAME
@@ -160,7 +160,7 @@ the entire template each time on the command-line.
 Dan Fandrich <dan@coneharvesters.com>
 
 # COPYRIGHT
-Copyright 2006-2021 by Daniel Fandrich <dan@coneharvesters.com>
+Copyright 2006-2023 by Daniel Fandrich <dan@coneharvesters.com>
 
 This program is free software; you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
