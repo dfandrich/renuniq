@@ -8,7 +8,7 @@ build-backend = "setuptools.build_meta"
 [project]
 name = "renuniq"
 description = "Renames files, giving them each unique names"
-version = "2"
+version = "3.dev"
 readme = "README.md"
 authors = [{name = "Dan Fandrich", email = "dan@coneharvesters.com"}]
 license = "GPL-2.0-or-later"

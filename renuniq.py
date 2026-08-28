@@ -6,7 +6,7 @@ the name to make it unique, or a myriad of other ways.
 """
 
 __author__ = 'Dan Fandrich'
-__version__ = '2'
+__version__ = '3.dev'
 __license__ = 'GPLv2+'
 
 import contextlib

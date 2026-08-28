@@ -2,7 +2,7 @@
 title: renuniq
 section: 1
 header: User Manual
-footer: renuniq ver. 2
+footer: renuniq ver. 3.dev
 date: November 28, 2023
 ---
 # NAME
