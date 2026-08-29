@@ -144,6 +144,20 @@ class TestRenuniq(unittest.TestCase):
         self.assertFilesEqual(
             ['20210102_DESCRIPTOR_.x', 'a', 'b', 'file10.x', 'file6.x', 'file7572', 'withdata'])
 
+    def test_standard_template_dirpath(self):
+        rc = renuniq.rename(['UNITTEST', './file4.x', './a'])
+
+        self.assertEqual(rc, 0)
+        self.assertFilesEqual(
+            ['20210102_a', '20210102_file4.x', 'b', 'file10.x', 'file6.x', 'file7572', 'withdata'])
+
+    def test_standard_template_onedirpath(self):
+        rc = renuniq.rename(['UNITTEST', './file4.x', 'a'])
+
+        self.assertEqual(rc, 0)
+        self.assertFilesEqual(
+            ['20210102_a', '20210102_file4.x', 'b', 'file10.x', 'file6.x', 'file7572', 'withdata'])
+
     def test_single_nosubst(self):
         rc = renuniq.rename(['UNITTEST', '-m', '-t', '%Y%m%d_%{UNIQSUFF}', 'file4.x'])
 
@@ -272,6 +286,13 @@ class TestRenuniq(unittest.TestCase):
         self.assertFilesEqual(['TST_09', 'TST_10', 'file10.x', 'file4.x', 'file6.x', 'file7572',
                                'withdata'])
 
+    def test_startcount_badnum(self):
+        rc = renuniq.rename(['UNITTEST', '-t', 'TST_%{NUM}', '-c', 'x12',
+                             'a', 'b', 'file10.x', 'file4.x', 'file6.x', 'file7572', 'withdata'])
+        self.assertEqual(rc, 1)
+        self.assertFilesEqual(
+            ['a', 'b', 'file10.x', 'file4.x', 'file6.x', 'file7572', 'withdata'])
+
     def test_interval(self):
         rc = renuniq.rename(['UNITTEST', '-t', 'TST_%{NUM}', '-i', '3', 'a', 'b', 'file10.x'])
         self.assertEqual(rc, 0)
@@ -296,6 +317,12 @@ class TestRenuniq(unittest.TestCase):
         self.assertEqual(rc, 0)
         self.assertFilesEqual(
             ['TST_1', 'b', 'file10.x', 'file4.x', 'file6.x', 'file7572', 'withdata'])
+
+    def test_interval_badnum(self):
+        rc = renuniq.rename(['UNITTEST', '-t', 'TST_%{NUM}', '-i', '2^8', 'a', 'b', 'file10.x'])
+        self.assertEqual(rc, 1)
+        self.assertFilesEqual(
+            ['a', 'b', 'file10.x', 'file4.x', 'file6.x', 'file7572', 'withdata'])
 
     def test_quote_filenames(self):
         # Create some names that need special quoting
