@@ -9,6 +9,7 @@ __author__ = 'Dan Fandrich'
 __version__ = '3.dev'
 __license__ = 'GPLv2+'
 
+import collections
 import contextlib
 import getopt
 import logging
@@ -69,34 +70,34 @@ def getmtime(fn: str) -> time.struct_time:
     return time.localtime(os.stat(fn)[stat.ST_MTIME])
 
 
-class Substitute(dict[str, str]):
+class Substitute(collections.UserDict[str, str]):
     """Substitute variables for their keys. Looks much like a dict."""
 
     def __init__(self, d: dict[str, str], num: int, num_width: int):
-        dict.__init__(self, d)
+        super().__init__(d)
         self.number = num
         self.num_width = num_width
 
-    def __getitem__(self, attr: str) -> str:
+    def __getitem__(self, key: str) -> str:
         """Returns the value of the given attribute, with support for magic NUM* values."""
-        if self.__contains__(attr):
-            return dict.__getitem__(self, attr)
-        if attr == 'NUM':
-            attr = f'NUM{self.num_width}'
+        if self.__contains__(key):
+            return super().__getitem__(key)
+        if key == 'NUM':
+            key = f'NUM{self.num_width}'
 
-        if attr == 'NUM1':
+        if key == 'NUM1':
             return f'{self.number:01d}'
-        if attr == 'NUM2':
+        if key == 'NUM2':
             return f'{self.number:02d}'
-        if attr == 'NUM3':
+        if key == 'NUM3':
             return f'{self.number:03d}'
-        if attr == 'NUM4':
+        if key == 'NUM4':
             return f'{self.number:04d}'
-        if attr == 'NUM5':
+        if key == 'NUM5':
             return f'{self.number:05d}'
-        if attr == 'NUM6':
+        if key == 'NUM6':
             return f'{self.number:06d}'
-        raise KeyError(attr)
+        raise KeyError(key)
 
 
 def substvars(s: str, substdict: Mapping[str, str]) -> str:
@@ -106,8 +107,7 @@ def substvars(s: str, substdict: Mapping[str, str]) -> str:
     for i in re.finditer('%{([A-Za-z_0-9]*)}', s):
         varname = i.group(1)
         varvalue = substdict[varname]
-        newpieces.append(s[laststart:i.span()[0]])
-        newpieces.append(varvalue)
+        newpieces.extend([s[laststart:i.span()[0]], varvalue])
         laststart = i.span()[1]
     newpieces.append(s[laststart:])
     return ''.join(newpieces)
@@ -266,7 +266,7 @@ def rename(argv: list[str]) -> int:
                 opts.template = config['default_template']
 
     # What is the shortest suffix that will make a new name unique?
-    pathprefix = os.path.commonprefix(opts.names)
+    pathprefix = os.path.commonprefix(opts.names)  # noqa: RUF071
     dirprefix = os.path.dirname(pathprefix)
     prefix = os.path.basename(pathprefix)
     if dirprefix != os.path.dirname(opts.names[0]):
