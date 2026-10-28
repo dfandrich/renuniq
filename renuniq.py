@@ -145,6 +145,19 @@ def safemove(fr: str, to: str):
         shutil.move(fr, to)
 
 
+def commonprefix(strings: list[str]) -> str:
+    """Return the longest prefix in common in the given strings.
+
+    This does the same as the deprecated function os.path.commonprefix()
+    """
+    for i, group in enumerate(zip(*strings)):
+        if len(set(group)) > 1:
+            # Found the first character that differs
+            return strings[0][:i]
+    # All strings were the same, at least up to the length of the shortest one
+    return min(strings)
+
+
 def usage(config: dict[str, str]):
     """Show program usage information."""
     print('Usage: renuniq [-?hmnwLV] [-c countstart] [-d descriptor] [-i interval] [-t template] '
@@ -266,7 +279,7 @@ def rename(argv: list[str]) -> int:
                 opts.template = config['default_template']
 
     # What is the shortest suffix that will make a new name unique?
-    pathprefix = os.path.commonprefix(opts.names)  # noqa: RUF071
+    pathprefix = commonprefix(opts.names)
     dirprefix = os.path.dirname(pathprefix)
     prefix = os.path.basename(pathprefix)
     if dirprefix != os.path.dirname(opts.names[0]):
