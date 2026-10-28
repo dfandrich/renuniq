@@ -104,6 +104,7 @@ noqa-require-code = true
 
 [tool.ruff]
 lint.ignore = ["LOG015"]
+lint.external = ["S102"]
 
 [tool.pyrefly]
 project-includes = [
