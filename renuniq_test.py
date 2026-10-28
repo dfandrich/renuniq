@@ -24,7 +24,7 @@ import tempfile
 import textwrap
 import time
 import unittest
-from unittest.mock import Mock, patch
+from unittest.mock import MagicMock, patch
 
 import renuniq
 
@@ -165,8 +165,9 @@ class TestRenuniq(unittest.TestCase):
         self.assertFilesEqual(
             ['%Y%m%d_.x', 'a', 'b', 'file10.x', 'file6.x', 'file7572', 'withdata'])
 
-    @patch('renuniq.time.time', return_value=time.mktime(time.strptime('20210202', '%Y%m%d')))
-    def test_time_now(self, mock_time: Mock):
+    @patch('renuniq.time', new=MagicMock(
+        wraps=time, **{'time.return_value': time.mktime(time.strptime('20210202', '%Y%m%d'))}))
+    def test_time_now(self):
         rc = renuniq.rename(['UNITTEST', '-w', '-t', '%Y%m%d_%{UNIQSUFF}', 'file4.x'])
 
         self.assertEqual(rc, 0)
